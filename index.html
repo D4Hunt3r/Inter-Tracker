@@ -457,6 +457,57 @@ select.inp{text-overflow:ellipsis}
 .dm-row.done{border-color:color-mix(in srgb,var(--good) 58%,var(--line));background:color-mix(in srgb,var(--good) 9%,var(--sub))}
 .col-tile{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.55rem .7rem;border-radius:var(--rad-ctrl,10px);cursor:pointer;font-size:.82rem;transition:transform .14s,opacity .14s}
 .col-tile.locked{opacity:.58;cursor:not-allowed}
+/* ---- v11.1 Clean Mobile Syllabus Layout ---- */
+.ch-card{display:grid;gap:.45rem;padding:.65rem .75rem;border-radius:var(--rad-sub,12px);background:var(--sub);border:1px solid color-mix(in srgb,var(--line) 85%,transparent);transition:border-color .15s,background .15s}
+.ch-card.done{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+.ch-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.45rem}
+.ch-more{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--mut);cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s,background .15s}
+.ch-more:hover{color:var(--txt);border-color:color-mix(in srgb,var(--acc) 65%,var(--line));background:color-mix(in srgb,var(--card2) 85%,var(--acc))}
+.ch-meta{display:flex;align-items:center;justify-content:space-between;gap:.45rem;font-size:.74rem;line-height:1.2}
+.diff-pill{display:inline-flex;align-items:center;gap:.28rem;padding:.12rem .5rem;border-radius:99px;font-size:.7rem;font-weight:600;border:1px solid var(--line);background:var(--card2);color:var(--txt);cursor:pointer;transition:border-color .15s,transform .12s;white-space:nowrap}
+.diff-pill:hover{border-color:var(--acc);transform:translateY(-1px)}
+.diff-pill.unrated{color:var(--mut);border-style:dashed}
+.ms-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem}
+label.ms-pill{display:flex;align-items:center;justify-content:center;gap:.32rem;padding:.34rem .3rem;min-height:36px;border-radius:var(--rad-ctrl,10px);border:1px solid var(--line);background:color-mix(in srgb,var(--card2) 55%,transparent);font-size:.78rem;font-weight:500;cursor:pointer;user-select:none;transition:background .16s,border-color .16s,transform .12s;white-space:nowrap;overflow:hidden;min-width:0}
+label.ms-pill:hover{border-color:color-mix(in srgb,var(--ck-col,var(--acc)) 60%,var(--line))}
+label.ms-pill:has(input:checked){background:color-mix(in srgb,var(--ck-col,var(--acc)) 18%,var(--card2));border-color:color-mix(in srgb,var(--ck-col,var(--acc)) 78%,var(--line));color:var(--txt);font-weight:600}
+label.ms-pill input[type=checkbox]{appearance:none;-webkit-appearance:none;width:15px;height:15px;min-width:15px;border-radius:4.5px;border:1.5px solid color-mix(in srgb,var(--mut) 60%,var(--line));background:var(--trk);display:grid;place-content:center;cursor:pointer;transition:background .15s,border-color .15s,transform .14s;margin:0;flex-shrink:0}
+label.ms-pill input[type=checkbox]::after{content:"";width:9px;height:9px;transform:scale(0);transition:transform .15s cubic-bezier(.2,.9,.3,1.2);background:var(--onacc,#0b1020);clip-path:polygon(14% 48%,0 62%,40% 100%,100% 24%,86% 10%,39% 72%)}
+label.ms-pill input[type=checkbox]:checked{background:var(--ck-col,var(--acc));border-color:var(--ck-col,var(--acc));transform:scale(1.04)}
+label.ms-pill input[type=checkbox]:checked::after{transform:scale(1)}
+label.ms-pill.tick{animation:tick .38s ease-out}
+.ms-short{display:none}
+.ms-long{overflow:hidden;text-overflow:ellipsis}
+.ch-prog-slim{height:4px}
+.ch-prog-slim .seg-pill{height:4px}
+.grp-box{display:grid;gap:.6rem;border-radius:14px;padding:.72rem}
+.grp-head-row{display:flex;align-items:center;gap:.45rem;min-width:0}
+.grp-tgl{display:flex;align-items:center;gap:.65rem;text-align:left;flex:1;min-width:0;background:none;border:0;color:inherit;cursor:pointer;padding:0;min-height:42px}
+.grp-act-mini{display:inline-flex;align-items:center;gap:.3rem;flex-shrink:0}
+.syl-hero-top{display:flex;align-items:center;justify-content:space-between;gap:.85rem}
+.syl-ctrl-row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+@media(max-width:640px){
+ .ms-short{display:inline}
+ .ms-long{display:none}
+ .ms-strip{gap:.26rem}
+ label.ms-pill{padding:.28rem .18rem;min-height:34px;font-size:.72rem;gap:.22rem}
+ label.ms-pill input[type=checkbox]{width:13px;height:13px;min-width:13px;border-radius:4px}
+ label.ms-pill input[type=checkbox]::after{width:8px;height:8px}
+ .ch-card{padding:.52rem .58rem;gap:.36rem}
+ .ch-card .ch-name{font-size:.86rem;line-height:1.28}
+ .syl-body{padding:0 .55rem .7rem!important;gap:.5rem!important}
+ .grp-box{padding:.48rem .42rem .48rem .52rem!important;border-left-width:3px!important;border-radius:11px!important;gap:.42rem!important}
+ .grp-tgl{gap:.5rem;min-height:36px}
+ .grp-tgl svg{width:34px;height:34px}
+ .subhead-btn{padding:.58rem .72rem!important;column-gap:.65rem!important;row-gap:.18rem!important}
+ .subhead-btn>svg{width:42px;height:42px}
+ .subhead-meta{font-size:.74rem!important;gap:.2rem .55rem!important}
+ .syl-hero{padding:.75rem!important;gap:.55rem!important}
+ .syl-hero svg{width:52px;height:52px}
+ .syl-hero-note{display:none}
+}
+.gap-x-3{column-gap:.75rem}.items-stretch{align-items:stretch}.mb-2\.5{margin-bottom:.625rem}
+@media(min-width:640px){.sm\:flex{display:flex}.sm\:gap-6{gap:1.5rem}.sm\:items-center{align-items:center}.sm\:text-base{font-size:1rem;line-height:1.5rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}}
 </style>
 </head>
 <body>
@@ -514,6 +565,8 @@ const SUBJ = new Map([['sub_aa', 'Advanced Accounting', 'Group I'], ['sub_law', 
 const LEVELS = ['Easy', 'Easy-Med', 'Medium', 'Med-Hard', 'Hard'];
 const DCOL = { Easy: '#34d399', 'Easy-Med': '#a3e635', Medium: '#fbbf24', 'Med-Hard': '#fb923c', Hard: '#f87171' };
 const MILESTONES = ['Lectures', 'Study Material Questions', 'RTP/MTP', 'Short Notes'];
+const MILESTONE_SHORT = ['Lec', 'SM', 'RTP', 'Notes'];
+let sylEdit = false;
 let state, rawBad = null, sst = 'loaded', sDetail = '', tab = 'syllabus', chQ = '', dFil = '', mFil = '', aFil = 'active', lastMergeJson = null, lastFocus = null;
 const F = { sub: '', ch: '', from: '', to: '', q: '', n: 30 };
 const open = new Set(SUBJ.keys());
@@ -673,7 +726,9 @@ const ICO_PATHS = {
   cloud: [['path', { d: 'M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z' }]],
   refresh: [['path', { d: 'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8' }], ['path', { d: 'M21 3v5h-5' }], ['path', { d: 'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16' }], ['path', { d: 'M8 16H3v5' }]],
   listCheck: [['path', { d: 'm3 17 2 2 4-4' }], ['path', { d: 'm3 7 2 2 4-4' }], ['path', { d: 'M13 6h8' }], ['path', { d: 'M13 12h8' }], ['path', { d: 'M13 18h8' }]],
-  arrowRight: [['path', { d: 'M5 12h14' }], ['path', { d: 'm12 5 7 7-7 7' }]]
+  arrowRight: [['path', { d: 'M5 12h14' }], ['path', { d: 'm12 5 7 7-7 7' }]],
+  more: [['circle', { cx: 12, cy: 12, r: 1.4 }], ['circle', { cx: 19, cy: 12, r: 1.4 }], ['circle', { cx: 5, cy: 12, r: 1.4 }]],
+  plus: [['path', { d: 'M12 5v14' }], ['path', { d: 'M5 12h14' }]]
 };
 function ico(name, size = 15, cls = '') {
   const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
@@ -1956,24 +2011,149 @@ function diffModal(id) { // dated rating history + add-on-any-date + delete for 
     : h('p', { class: 'text-sm mut', text: one ? 'No dated difficulty entries yet. Add one above or use the dropdown on the chapter card.' : 'No difficulty ratings yet. Open “Dates & History” on any chapter to add dated ratings.' });
   modal('Difficulty history' + (one ? ' – ' + one.name : ' – all chapters'), h('div', { class: 'grid gap-3' }, addBox, listEl), [{ t: 'Close' }]);
 }
+function quickDiffModal(cid) {
+  const c = state.chapters.find(x => x.id === cid); if (!c) return;
+  const dhCount = cleanDiffHist(c.dh).length;
+  const pick = lv => {
+    const e = setDifficulty(cid, lv);
+    if (e) { warn(e); return; }
+    closeM(); renderSyllabus();
+    toast((lv ? 'Difficulty set to ' + lv : 'Difficulty cleared') + ' · ' + c.name, null);
+  };
+  modal('Difficulty · ' + c.name, h('div', { class: 'grid gap-3' },
+    h('div', { class: 'grid grid-cols-2 sm:grid-cols-3 gap-2' },
+      LEVELS.map(l => h('button', { type: 'button', class: 'btn s', style: 'justify-content:flex-start;border-left:4px solid ' + DCOL[l] + (c.diff === l ? ';border-color:var(--acc);background:var(--accs)' : ''), onclick: () => pick(l), text: l })),
+      h('button', { type: 'button', class: 'btn s', style: !c.diff ? 'border-color:var(--acc);background:var(--accs)' : '', onclick: () => pick(null), text: 'Unrated' })),
+    h('button', { type: 'button', class: 'btn s', onclick: () => { closeM(); diffModal(cid); } }, ico('calendar', 14), dhCount ? 'Dates & History (' + dhCount + ')' : 'Log dated difficulty / history')),
+  [{ t: 'Close' }]);
+}
+function chapterMenuModal(cid) {
+  const c = state.chapters.find(x => x.id === cid); if (!c) return;
+  const mixed = c.groupId && !c.archived ? gSeq(c.groupId) : null;
+  const grp = mixed || state.chapters.filter(x => x.subjectId === c.subjectId && x.archived === c.archived && x.groupId === c.groupId);
+  const gi = mixed ? mixed.indexOf('c:' + c.id) : grp.indexOf(c), lock = vLocked(c.subjectId);
+  const gs = gOrder(c.subjectId).map(x => x.g), dhCount = cleanDiffHist(c.dh).length;
+  const gsel = gs.length ? h('select', { class: 'inp', style: 'min-height:40px;font-size:.86rem', 'aria-label': 'Group of ' + c.name, onchange: e => { if (!fail(setChapterGroup([c.id], e.target.value || null))) { renderSyllabus(); toast('Moved to ' + (e.target.value ? gPath(e.target.value) : 'No group') + '.', null); } } },
+    h('option', { value: '', text: 'No group' }), gs.map(g => h('option', { value: g.id, text: gPath(g.id) }))) : null;
+  if (gsel) gsel.value = c.groupId || '';
+  const go = fn => { closeM(); fn(); };
+  modal(c.name, h('div', { class: 'grid gap-3 text-xs' },
+    !c.archived ? h('button', { type: 'button', class: 'btn p', onclick: () => go(() => launchTimerFor(c.subjectId, c.id, c.name)) }, ico('play', 14), 'Start Live Timer for this chapter') : null,
+    h('div', { class: 'grid gap-1.5' },
+      h('span', { class: 'mut font-semibold', text: 'DIFFICULTY' }),
+      h('div', { class: 'flex flex-wrap gap-1.5' },
+        LEVELS.map(l => h('button', { type: 'button', class: 'btn s', style: 'border-left:3.5px solid ' + DCOL[l] + (c.diff === l ? ';border-color:var(--acc);background:var(--accs)' : ''), onclick: () => { if (!fail(setDifficulty(c.id, l))) { closeM(); renderSyllabus(); } }, text: l })),
+        h('button', { type: 'button', class: 'btn s', style: !c.diff ? 'border-color:var(--acc);background:var(--accs)' : '', onclick: () => { if (!fail(setDifficulty(c.id, null))) { closeM(); renderSyllabus(); } }, text: 'Unrated' }),
+        h('button', { type: 'button', class: 'btn s', onclick: () => go(() => diffModal(c.id)) }, ico('calendar', 13), dhCount ? 'History (' + dhCount + ')' : 'Dated history'))),
+    gsel ? h('label', { class: 'grid gap-1' }, h('span', { class: 'mut font-semibold', text: 'GROUP / MODULE' }), gsel) : null,
+    h('div', { class: 'grid gap-1.5' },
+      h('span', { class: 'mut font-semibold', text: 'REORDER' + (lock ? ' (clear filters/sort to unlock)' : '') }),
+      h('div', { class: 'flex flex-wrap gap-1.5' },
+        h('button', { type: 'button', class: 'btn s', disabled: lock || gi === 0, onclick: () => { if (!fail(reorder(c.id, { by: -1 }))) { renderSyllabus(); chapterMenuModal(c.id); } }, text: '▲ Move up' }),
+        h('button', { type: 'button', class: 'btn s', disabled: lock || gi === grp.length - 1, onclick: () => { if (!fail(reorder(c.id, { by: 1 }))) { renderSyllabus(); chapterMenuModal(c.id); } }, text: '▼ Move down' }),
+        h('button', { type: 'button', class: 'btn s', disabled: lock || grp.length < 2, onclick: () => go(() => moveModal(c.id)), text: '⇅ Move to position…' }))),
+    h('div', { class: 'flex flex-wrap gap-2 pt-2', style: 'border-top:1px solid var(--line)' },
+      h('button', { type: 'button', class: 'btn s', onclick: () => go(() => chapterModal(c.subjectId, c.id)), text: 'Rename' }),
+      c.archived
+        ? h('button', { type: 'button', class: 'btn s', onclick: () => go(() => { if (!fail(archiveChapter(c.id, false))) render(); }), text: 'Restore' })
+        : h('button', { type: 'button', class: 'btn s', onclick: () => go(() => actions.archive(c.id)), text: 'Archive' }),
+      h('button', { type: 'button', class: 'btn s d', onclick: () => go(() => delChapterModal(c.id)), text: 'Delete chapter' }))),
+  [{ t: 'Done' }]);
+}
+function groupAddModal(gid) {
+  const g = state.groups.find(x => x.id === gid); if (!g) return;
+  const depth = gDepth(gid), go = fn => { closeM(); fn(); };
+  modal('Add inside “' + g.name + '”', h('div', { class: 'grid gap-2' },
+    h('button', { type: 'button', class: 'btn p', onclick: () => go(() => chapterModal(g.subjectId, null, g.id)), text: '+ Add single chapter' }),
+    h('button', { type: 'button', class: 'btn', onclick: () => go(() => bulkModal(g.subjectId, g.id)), text: '+ Add many chapters (paste list)' }),
+    depth < GMAXDEPTH - 1 ? h('button', { type: 'button', class: 'btn', onclick: () => go(() => groupModal(g.subjectId, g.id)), text: '+ Add sub-group' }) : null),
+  [{ t: 'Cancel' }]);
+}
+function groupMenuModal(gid) {
+  const g = state.groups.find(x => x.id === gid); if (!g) return;
+  const sib = g.parentId ? gSeq(g.parentId) : gKids(state.groups.filter(x => x.subjectId === g.subjectId), null);
+  const idx = g.parentId ? sib.indexOf('g:' + g.id) : sib.findIndex(x => x.id === g.id);
+  const go = fn => { closeM(); fn(); };
+  modal('Group · ' + g.name, h('div', { class: 'grid gap-2.5' },
+    h('button', { type: 'button', class: 'btn', onclick: () => go(() => groupEditModal(g.id)), text: 'Edit name, colour, icon or location' }),
+    h('div', { class: 'grid grid-cols-2 gap-2' },
+      h('button', { type: 'button', class: 'btn s', disabled: idx <= 0, onclick: () => { if (!fail(moveGroup(g.id, -1))) { renderSyllabus(); groupMenuModal(g.id); } }, text: '▲ Move up' }),
+      h('button', { type: 'button', class: 'btn s', disabled: idx < 0 || idx >= sib.length - 1, onclick: () => { if (!fail(moveGroup(g.id, 1))) { renderSyllabus(); groupMenuModal(g.id); } }, text: '▼ Move down' })),
+    h('button', { type: 'button', class: 'btn d', onclick: () => go(() => delGroupModal(g.id)), text: 'Delete group' })),
+  [{ t: 'Close' }]);
+}
+function subjectMenuModal(sid) {
+  const s = SUBJ.get(sid); if (!s) return;
+  const hasG = state.groups.some(g => g.subjectId === sid), go = fn => { closeM(); fn(); };
+  modal('Manage · ' + s.name, h('div', { class: 'grid gap-2' },
+    h('button', { type: 'button', class: 'btn p', onclick: () => go(() => chapterModal(sid)), text: '+ Add chapter' }),
+    h('button', { type: 'button', class: 'btn', onclick: () => go(() => bulkModal(sid)), text: '+ Add many chapters (paste a list)' }),
+    h('button', { type: 'button', class: 'btn', onclick: () => go(() => groupModal(sid)), text: '+ Add group / module' }),
+    hasG ? h('button', { type: 'button', class: 'btn', onclick: () => go(() => moveChaptersModal(sid)), text: 'Move chapters to a group' }) : null),
+  [{ t: 'Close' }]);
+}
 function chapterRow(c, S, col) {
-  const p = prog(c), mixed = c.groupId && !c.archived ? gSeq(c.groupId) : null, grp = mixed || state.chapters.filter(x => x.subjectId === c.subjectId && x.archived === c.archived && x.groupId === c.groupId), gi = mixed ? mixed.indexOf('c:' + c.id) : grp.indexOf(c), lock = vLocked(c.subjectId);
+  const p = prog(c), mins = S.chap.get(c.id) || 0;
+  // Compact Clean Mode (default): sleek card fitting 4-5 chapters per phone screen with ⋯ sheet & 4-pill row
+  if (!sylEdit) {
+    const dCol = DCOL[c.diff] || null;
+    const diffBtn = h('button', { type: 'button', class: 'diff-pill' + (c.diff ? '' : ' unrated'), style: dCol ? 'border-color:color-mix(in srgb,' + dCol + ' 55%,var(--line));color:' + inkOf(dCol) : '', 'data-act': 'chdiff', 'data-id': c.id, 'aria-label': 'Difficulty: ' + (c.diff || 'Unrated') + ' — tap to change' },
+      dCol ? h('span', { style: 'width:6px;height:6px;border-radius:99px;background:' + dCol + ';flex-shrink:0' }) : null,
+      h('span', { text: c.diff || 'Rate' }));
+    return h('div', { class: 'ch-card' + (p === 100 ? ' done' : '') },
+      h('div', { class: 'ch-top' },
+        h('div', { class: 'ch-name font-medium break-words min-w-0 flex-1', text: c.name }),
+        h('button', { type: 'button', class: 'ch-more', 'data-act': 'chmenu', 'data-id': c.id, title: 'Chapter options (Timer, Group, Move, Rename, Delete)', 'aria-label': 'Options for ' + c.name }, ico('more', 15))),
+      h('div', { class: 'ch-meta' },
+        h('div', { class: 'flex flex-wrap items-center gap-1.5 min-w-0' },
+          h('span', { class: 'mut num', text: fmtH(mins) + (c.archived ? ' · archived' : '') }),
+          h('span', { class: 'mut', 'aria-hidden': 'true', text: '·' }),
+          diffBtn),
+        h('span', { class: 'font-semibold num shrink-0', style: p === 100 ? 'color:var(--good)' : 'color:var(--mut)', text: p + '%' })),
+      h('div', { class: 'ch-prog-slim' }, chapterBar(c, col)),
+      h('div', { class: 'ms-strip' }, MILESTONES.map((m, i) =>
+        h('label', { class: 'ms-pill', style: '--ck-col:' + col, title: m },
+          h('input', { type: 'checkbox', style: 'accent-color:' + col, checked: c.m[i], 'data-act': 'ms', 'data-id': c.id, 'data-i': i, 'aria-label': m + ' – ' + c.name }),
+          h('span', { class: 'ms-short', text: MILESTONE_SHORT[i] }),
+          h('span', { class: 'ms-long', text: i === 1 ? 'Study Material' : m })))));
+  }
+  // Full Manage Mode: all inline edit/reorder/group dropdowns visible for rapid bulk organizing
+  const mixed = c.groupId && !c.archived ? gSeq(c.groupId) : null, grp = mixed || state.chapters.filter(x => x.subjectId === c.subjectId && x.archived === c.archived && x.groupId === c.groupId), gi = mixed ? mixed.indexOf('c:' + c.id) : grp.indexOf(c), lock = vLocked(c.subjectId);
   const rb = (t, act, dis, label) => h('button', { type: 'button', class: 'btn s', text: t, 'data-act': act, 'data-id': c.id, 'aria-label': label, disabled: dis, title: lock ? 'Clear the search, filters and sorting to reorder' : null });
   return h('div', { class: 'sub grid gap-2' },
-    h('div', { class: 'flex flex-wrap items-start justify-between gap-2' }, h('div', { class: 'min-w-0' }, h('div', { class: 'font-medium break-words', text: c.name }), h('div', { class: 'text-xs mut', text: 'Total Hours Spent: ' + fmtH(S.chap.get(c.id) || 0) + (c.archived ? ' · archived' : '') }), diffControls(c)),
+    h('div', { class: 'flex flex-wrap items-start justify-between gap-2' }, h('div', { class: 'min-w-0' }, h('div', { class: 'font-medium break-words', text: c.name }), h('div', { class: 'text-xs mut', text: 'Total Hours Spent: ' + fmtH(mins) + (c.archived ? ' · archived' : '') }), diffControls(c)),
       h('div', { class: 'flex flex-wrap gap-2' }, btn('Rename', 'rename', c.id, '', 'Rename ' + c.name), c.archived ? btn('Restore', 'restore', c.id, '', 'Restore ' + c.name) : btn('Archive', 'archive', c.id, '', 'Archive ' + c.name), btn('Delete', 'delchap', c.id, 'd', 'Delete chapter ' + c.name), rb('▲', 'chup', lock || gi === 0, 'Move ' + c.name + ' up'), rb('▼', 'chdown', lock || gi === grp.length - 1, 'Move ' + c.name + ' down'), rb('⇅ Move', 'chmove', lock || grp.length < 2, 'Move ' + c.name + ' to a position'))),
     h('div', { class: 'flex items-center gap-3' }, h('div', { class: 'flex-1' }, chapterBar(c, col)), h('span', { class: 'text-sm w-10 text-right num font-medium', text: p + '%' })),
-    h('div', { class: 'grid grid-cols-2 sm:grid-cols-4 gap-2' }, MILESTONES.map((m, i) => h('label', { class: 'ck', style: '--ck-col:' + col }, h('input', { type: 'checkbox', style: 'accent-color:' + col, checked: c.m[i], 'data-act': 'ms', 'data-id': c.id, 'data-i': i }), m))));
+    h('div', { class: 'ms-strip' }, MILESTONES.map((m, i) =>
+      h('label', { class: 'ms-pill', style: '--ck-col:' + col, title: m },
+        h('input', { type: 'checkbox', style: 'accent-color:' + col, checked: c.m[i], 'data-act': 'ms', 'data-id': c.id, 'data-i': i, 'aria-label': m + ' – ' + c.name }),
+        h('span', { class: 'ms-short', text: MILESTONE_SHORT[i] }),
+        h('span', { class: 'ms-long', text: i === 1 ? 'Study Material' : m })))));
 }
 function subjectCard(s, S) {
   const st = subjectStat(s.id), q = norm(chQ), sp = V(s.id), isOpen = open.has(s.id) || !!q || vActive(sp) || aFil !== 'active', m = c => (!q || norm(c.name).includes(q)) && vMatch(c, sp, S);
   const act = st.act.filter(m), arc = state.chapters.filter(c => c.subjectId === s.id && c.archived && m(c));
+  const hasG = state.groups.some(g => g.subjectId === s.id);
   const badge = { 'Not Started': 'color:var(--mut);border-color:var(--line)', 'In Progress': 'color:var(--warn);border-color:var(--warnb)', Completed: 'color:var(--good);border-color:var(--goodb)' }[st.status];
-  const card = h('div', { class: 'card', style: 'overflow:clip' }, h('button', { type: 'button', class: 'w-full text-left p-4' + (isOpen ? ' subhead' : ''), style: 'display:grid;grid-template-columns:auto 1fr;column-gap:1rem;row-gap:.5rem;align-items:center', 'data-act': 'toggle', 'data-id': s.id, 'aria-expanded': String(isOpen) }, ring(st.pct, s.col, 64, s.name + ' syllabus tracking progress'),
-    h('div', { class: 'flex items-center justify-between gap-2' }, h('span', { class: 'font-semibold' }, h('span', { class: 'inline-block w-2.5 h-2.5 rounded-full mr-2', style: 'background:' + s.col }), s.name), h('span', { class: 'mut text-sm', text: isOpen ? '▲' : '▼' })),
-    h('div', { class: 'flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mut' }, h('span', { class: 'px-2 rounded-full border text-xs', style: badge, text: st.status }), h('span', { text: st.act.length + ' active chapter' + (st.act.length === 1 ? '' : 's') }), h('span', { text: st.pct + '% syllabus tracked' }), h('span', { text: fmtH(S.sub.get(s.id) || 0) + ' studied' })),
+  const card = h('div', { class: 'card', style: 'overflow:clip' }, h('button', { type: 'button', class: 'subhead-btn w-full text-left p-4' + (isOpen ? ' subhead' : ''), style: 'display:grid;grid-template-columns:auto 1fr;column-gap:1rem;row-gap:.4rem;align-items:center', 'data-act': 'toggle', 'data-id': s.id, 'aria-expanded': String(isOpen) }, ring(st.pct, s.col, 60, s.name + ' syllabus tracking progress'),
+    h('div', { class: 'flex items-center justify-between gap-2 min-w-0' }, h('span', { class: 'font-semibold truncate' }, h('span', { class: 'inline-block w-2.5 h-2.5 rounded-full mr-2', style: 'background:' + s.col }), s.name), h('span', { class: 'mut text-sm shrink-0', text: isOpen ? '▲' : '▼' })),
+    h('div', { class: 'subhead-meta flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mut num' }, h('span', { class: 'px-2 rounded-full border text-xs', style: badge, text: st.status }), h('span', { text: st.act.length + ' ch' }), h('span', { text: st.pct + '%' }), h('span', { text: fmtH(S.sub.get(s.id) || 0) })),
     null));
-  if (isOpen) card.append(h('div', { class: 'px-4 pb-4 grid gap-3' }, h('div', { class: 'flex flex-wrap gap-2' }, h('button', { type: 'button', class: 'btn p s', text: '+ Add Chapter', 'data-act': 'addch', 'data-id': s.id, 'aria-label': 'Add chapter to ' + s.name }), h('button', { type: 'button', class: 'btn s', text: 'Add many (paste a list)', 'data-act': 'addmany', 'data-id': s.id, 'aria-label': 'Add many chapters to ' + s.name }), h('button', { type: 'button', class: 'btn s', text: '+ Add group', 'data-act': 'addgrp', 'data-id': s.id, 'aria-label': 'Add groups to ' + s.name }), state.groups.some(g => g.subjectId === s.id) ? h('button', { type: 'button', class: 'btn s', text: 'Move chapters to a group', 'data-act': 'movechs', 'data-id': s.id, 'aria-label': 'Move chapters to a group in ' + s.name }) : null, state.groups.some(g => g.subjectId === s.id) ? h('button', { type: 'button', class: 'btn s', text: state.groups.some(g => g.subjectId === s.id && !gClosed.has(g.id)) ? 'Collapse all groups' : 'Expand all groups', 'data-act': 'gcollapse', 'data-id': s.id, 'aria-label': 'Collapse or expand all groups in ' + s.name }) : null, h('button', { type: 'button', class: 'btn s' + (vSubj[s.id] ? ' ' : ''), style: vSubj[s.id] ? 'border-color:var(--acc);background:var(--accs)' : '', 'data-act': 'vopen', 'data-id': s.id, 'aria-label': 'Sort and filter chapters in ' + s.name }, ico('sliders', 14), 'Sort & filter' + (vSubj[s.id] ? ' •' : ''))),
+  const subjToolbar = sylEdit
+    ? h('div', { class: 'flex flex-wrap gap-2' },
+        h('button', { type: 'button', class: 'btn p s', text: '+ Add Chapter', 'data-act': 'addch', 'data-id': s.id, 'aria-label': 'Add chapter to ' + s.name }),
+        h('button', { type: 'button', class: 'btn s', text: 'Add many', 'data-act': 'addmany', 'data-id': s.id, 'aria-label': 'Add many chapters to ' + s.name }),
+        h('button', { type: 'button', class: 'btn s', text: '+ Add group', 'data-act': 'addgrp', 'data-id': s.id, 'aria-label': 'Add groups to ' + s.name }),
+        hasG ? h('button', { type: 'button', class: 'btn s', text: 'Move to group', 'data-act': 'movechs', 'data-id': s.id, 'aria-label': 'Move chapters to a group in ' + s.name }) : null,
+        hasG ? h('button', { type: 'button', class: 'btn s', text: state.groups.some(g => g.subjectId === s.id && !gClosed.has(g.id)) ? 'Collapse groups' : 'Expand groups', 'data-act': 'gcollapse', 'data-id': s.id, 'aria-label': 'Collapse or expand all groups in ' + s.name }) : null,
+        h('button', { type: 'button', class: 'btn s', style: vSubj[s.id] ? 'border-color:var(--acc);background:var(--accs)' : '', 'data-act': 'vopen', 'data-id': s.id, 'aria-label': 'Sort and filter chapters in ' + s.name }, ico('sliders', 14), 'Filter' + (vSubj[s.id] ? ' •' : '')))
+    : h('div', { class: 'flex flex-wrap items-center justify-between gap-1.5' },
+        h('div', { class: 'flex flex-wrap items-center gap-1.5' },
+          h('button', { type: 'button', class: 'btn p s', 'data-act': 'addch', 'data-id': s.id, 'aria-label': 'Add chapter to ' + s.name }, ico('plus', 13), 'Chapter'),
+          h('button', { type: 'button', class: 'btn s', style: vSubj[s.id] ? 'border-color:var(--acc);background:var(--accs)' : '', 'data-act': 'vopen', 'data-id': s.id, 'aria-label': 'Sort and filter chapters in ' + s.name }, ico('sliders', 13), 'Filter' + (vSubj[s.id] ? ' •' : '')),
+          hasG ? h('button', { type: 'button', class: 'btn s', text: state.groups.some(g => g.subjectId === s.id && !gClosed.has(g.id)) ? 'Collapse all' : 'Expand all', 'data-act': 'gcollapse', 'data-id': s.id, 'aria-label': 'Collapse or expand all groups in ' + s.name }) : null),
+        h('button', { type: 'button', class: 'ch-more', 'data-act': 'subjmenu', 'data-id': s.id, title: 'Add many, add group, or move chapters', 'aria-label': 'More actions for ' + s.name }, ico('more', 15)));
+  if (isOpen) card.append(h('div', { class: 'syl-body px-4 pb-4 grid gap-3' }, subjToolbar,
     vActive(sp) || sp.sort !== 'manual' || vSubj[s.id] ? h('div', { class: 'sub text-xs flex flex-wrap items-center justify-between gap-2', role: 'status' }, h('span', { class: 'break-words min-w-0', text: 'Showing ' + (aFil === 'archived' ? arc.length + ' of ' + state.chapters.filter(c => c.subjectId === s.id && c.archived).length + ' archived' : act.length + ' of ' + st.act.length) + ' chapters' + (vDescribe(sp).length ? ' · ' + vDescribe(sp).join(' · ') : '') + (vSubj[s.id] ? ' · this subject only' : '') }), btn(vSubj[s.id] ? 'Use main settings' : 'Clear', 'vclear', s.id, '', 'Clear sort and filter for ' + s.name)) : null,
     ...bodyRows(act, arc, S, s, q),
     arc.length && aFil === 'active' ? h('details', { class: 'text-sm' }, h('summary', { class: 'mut cursor-pointer py-2', text: 'Archived chapters (' + arc.length + ')' }), h('div', { class: 'grid gap-2' }, arc.map(c => h('div', { class: 'sub flex flex-wrap items-center justify-between gap-2' },
@@ -1983,16 +2163,23 @@ function subjectCard(s, S) {
 function renderSyllabus() {
   const S = stats(); let ch = 0, done = 0;
   for (const s of SUBJ.values()) { const t = subjectStat(s.id); ch += t.act.length; done += t.done; }
-  const pct = ch ? Math.round(done / (ch * 4) * 100) : 0, stat = (t, v) => h('div', {}, h('div', { class: 'text-xs mut', text: t }), h('div', { class: 'text-xl font-semibold', text: v }));
-  const archN = state.chapters.filter(c => c.archived).length, asel = h('select', { class: 'inp', style: 'width:auto', 'aria-label': 'Show active or archived chapters', onchange: e => { aFil = e.target.value; renderSyllabus(); } }, h('option', { value: 'active', text: 'Active chapters' }), h('option', { value: 'archived', text: 'Archived (' + archN + ')' }), h('option', { value: 'all', text: 'Active + archived' })); asel.value = aFil;
+  const pct = ch ? Math.round(done / (ch * 4) * 100) : 0, stat = (t, v) => h('div', {}, h('div', { class: 'text-xs mut', text: t }), h('div', { class: 'text-lg sm:text-xl font-semibold num', text: v }));
+  const archN = state.chapters.filter(c => c.archived).length, asel = h('select', { class: 'inp', style: 'width:auto;min-height:36px;padding:.2rem .55rem;font-size:.82rem', 'aria-label': 'Show active or archived chapters', onchange: e => { aFil = e.target.value; renderSyllabus(); } }, h('option', { value: 'active', text: 'Active' }), h('option', { value: 'archived', text: 'Archived (' + archN + ')' }), h('option', { value: 'all', text: 'All' })); asel.value = aFil;
   ensureView(); VI = { last: new Map() }; for (const l of state.logs) if (l.chapterId && (!VI.last.has(l.chapterId) || l.date > VI.last.get(l.chapterId))) VI.last.set(l.chapterId, l.date);
-  const gAct = vFilterN(vGlobal) + (vGlobal.sort !== 'manual' ? 1 : 0), vbtn = h('button', { type: 'button', class: 'btn', style: gAct ? 'border-color:var(--acc);background:var(--accs)' : '', 'data-act': 'vopen', 'data-id': '', 'aria-label': 'Sort and filter chapters in all subjects' }, ico('sliders', 15), 'Sort & filter' + (gAct ? ' (' + gAct + ')' : ''));
-  const search = h('input', { id: 'chq', type: 'search', class: 'inp', placeholder: 'Search chapters…', 'aria-label': 'Search chapters', value: chQ, oninput: e => { const pos = e.target.selectionStart; chQ = e.target.value; renderSyllabus(); const i = $('#chq'); if (i) { i.focus(); const p = pos == null ? chQ.length : Math.min(pos, chQ.length); i.setSelectionRange(p, p); } } });
-  const root = h('div', { class: 'grid gap-6' }, h('section', { class: 'card p-4 grid gap-3', 'aria-label': 'Overall preparation' },
-    h('div', { class: 'grid grid-cols-3 gap-3' }, stat('Active chapters', String(ch)), stat('Milestones done', pct + '%'), stat('Total study hours', fmtH(S.total))),
-    h('div', { class: 'flex items-center gap-3' }, ring(pct, 'var(--acc)', 72, 'Overall milestone completion'), h('div', { class: 'text-sm mut', text: 'of all milestones across your active chapters are ticked.' })), h('p', { class: 'text-xs mut', text: 'Syllabus-tracker completion counts ticked milestones only. It is not proof of conceptual mastery.' })), h('div', { class: 'flex flex-col sm:flex-row gap-2' }, h('div', { class: 'flex-1' }, search), vbtn, asel, btn('Difficulty history (all chapters)', 'dhist', '', '', 'Difficulty history for all chapters')));
+  const gAct = vFilterN(vGlobal) + (vGlobal.sort !== 'manual' ? 1 : 0), vbtn = h('button', { type: 'button', class: 'btn s', style: gAct ? 'border-color:var(--acc);background:var(--accs)' : '', 'data-act': 'vopen', 'data-id': '', 'aria-label': 'Sort and filter chapters in all subjects' }, ico('sliders', 14), 'Filter' + (gAct ? ' (' + gAct + ')' : ''));
+  const mbtn = h('button', { type: 'button', class: 'btn s' + (sylEdit ? ' p' : ''), 'aria-pressed': String(sylEdit), 'data-act': 'syledit', title: 'Toggle inline reorder, group & delete buttons on every card', text: sylEdit ? 'Done managing' : 'Manage' });
+  const search = h('input', { id: 'chq', type: 'search', class: 'inp', style: 'min-height:40px', placeholder: 'Search chapters…', 'aria-label': 'Search chapters', value: chQ, oninput: e => { const pos = e.target.selectionStart; chQ = e.target.value; renderSyllabus(); const i = $('#chq'); if (i) { i.focus(); const p = pos == null ? chQ.length : Math.min(pos, chQ.length); i.setSelectionRange(p, p); } } });
+  const root = h('div', { class: 'grid gap-4 sm:gap-6' },
+    h('section', { class: 'card syl-hero p-4 grid gap-3', 'aria-label': 'Overall preparation' },
+      h('div', { class: 'syl-hero-top' },
+        h('div', { class: 'grid grid-cols-3 gap-3 flex-1 min-w-0' }, stat('Chapters', String(ch)), stat('Tracked', pct + '%'), stat('Studied', fmtH(S.total))),
+        ring(pct, 'var(--acc)', 64, 'Overall milestone completion')),
+      h('p', { class: 'syl-hero-note text-xs mut', text: 'Syllabus-tracker completion counts ticked milestones only. Tap ⋯ on any chapter or group for options, or tap Manage for bulk editing.' })),
+    h('div', { class: 'grid sm:flex gap-2 items-stretch sm:items-center' },
+      h('div', { class: 'flex-1' }, search),
+      h('div', { class: 'syl-ctrl-row' }, vbtn, mbtn, asel, btn('Diff history', 'dhist', '', '', 'Difficulty history for all chapters'))));
   if (gAct) root.append(h('div', { class: 'sub text-sm flex flex-wrap items-center justify-between gap-2', role: 'status' }, h('span', { class: 'break-words min-w-0', text: 'All subjects · ' + vDescribe(vGlobal).join(' · ') + ' (a subject with its own settings keeps them)' }), btn('Clear', 'vclear', '', '', 'Clear sort and filter for all subjects')));
-  for (const g of ['Group I', 'Group II']) root.append(h('section', {}, h('h2', { class: 'text-sm font-semibold tracking-widest mut mb-3', text: g.toUpperCase() }), h('div', { class: 'grid gap-4' }, [...SUBJ.values()].filter(s => s.group === g).map(s => subjectCard(s, S)))));
+  for (const g of ['Group I', 'Group II']) root.append(h('section', {}, h('h2', { class: 'text-sm font-semibold tracking-widest mut mb-2.5', text: g.toUpperCase() }), h('div', { class: 'grid gap-3.5' }, [...SUBJ.values()].filter(s => s.group === g).map(s => subjectCard(s, S)))));
   mount(root);
 }
 function chapterModal(sid, cid, gid) {
@@ -5551,12 +5738,17 @@ function groupHead(g, i, n, S, s, depth, isOpen, kidCount) { // collapsible head
   const mins = chs.reduce((a, c) => a + (S.chap.get(c.id) || 0), 0), col = g.color || s.col, nm = gPath(g.id);
   const mv = (t, act2, dis, label) => h('button', { type: 'button', class: 'btn s', text: t, 'data-act': act2, 'data-id': g.id, 'aria-label': label, disabled: dis });
   return h('div', { class: 'grid gap-2' },
-    h('button', { type: 'button', class: 'flex items-center gap-3 text-left w-full', style: 'background:none;border:0;color:inherit;cursor:pointer;padding:0;min-height:48px', 'data-act': 'gtoggle', 'data-id': g.id, 'aria-expanded': String(isOpen), 'aria-label': (isOpen ? 'Collapse' : 'Expand') + ' group ' + nm },
-      ring(pct, col, 44, 'Progress of group ' + g.name),
-      h('div', { class: 'min-w-0 flex-1' }, h('div', { class: 'font-semibold break-words', style: 'color:' + inkOf(col), text: (g.icon ? g.icon + ' ' : '') + g.name }),
-        h('div', { class: 'text-xs mut', text: act.length + ' active chapter' + (act.length === 1 ? '' : 's') + ' · ' + pct + '% · ' + fmtH(mins) + (kidCount ? ' · ' + kidCount + ' sub-group' + (kidCount === 1 ? '' : 's') : '') })),
-      h('span', { class: 'mut text-sm', text: isOpen ? '▲' : '▼', 'aria-hidden': 'true' })),
-    isOpen ? h('div', { class: 'flex flex-wrap gap-2' }, btn('+ Chapter', 'addchg', g.id, '', 'Add chapter to group ' + nm), btn('+ Many', 'addmanyg', g.id, '', 'Add many chapters to group ' + nm), depth < GMAXDEPTH - 1 ? btn('+ Sub-group', 'addsub', g.id, '', 'Add a sub-group inside ' + nm) : null, btn('Edit', 'rengrp', g.id, '', 'Edit group ' + nm + ' (name, colour, icon, location)'),
+    h('div', { class: 'grp-head-row' },
+      h('button', { type: 'button', class: 'grp-tgl', 'data-act': 'gtoggle', 'data-id': g.id, 'aria-expanded': String(isOpen), 'aria-label': (isOpen ? 'Collapse' : 'Expand') + ' group ' + nm },
+        ring(pct, col, 42, 'Progress of group ' + g.name),
+        h('div', { class: 'min-w-0 flex-1' },
+          h('div', { class: 'font-semibold break-words text-sm sm:text-base', style: 'color:' + inkOf(col), text: (g.icon ? g.icon + ' ' : '') + g.name }),
+          h('div', { class: 'text-xs mut num', text: act.length + ' ch · ' + pct + '% · ' + fmtH(mins) + (kidCount ? ' · ' + kidCount + ' sub' : '') })),
+        h('span', { class: 'mut text-xs shrink-0', text: isOpen ? '▲' : '▼', 'aria-hidden': 'true' })),
+      !sylEdit ? h('div', { class: 'grp-act-mini' },
+        h('button', { type: 'button', class: 'ch-more', 'data-act': 'gadd', 'data-id': g.id, title: 'Add chapter or sub-group inside ' + g.name, 'aria-label': 'Add inside ' + nm }, ico('plus', 14)),
+        h('button', { type: 'button', class: 'ch-more', 'data-act': 'gmenu', 'data-id': g.id, title: 'Edit, reorder or delete group ' + g.name, 'aria-label': 'Group options for ' + nm }, ico('more', 14))) : null),
+    isOpen && sylEdit ? h('div', { class: 'flex flex-wrap gap-2' }, btn('+ Chapter', 'addchg', g.id, '', 'Add chapter to group ' + nm), btn('+ Many', 'addmanyg', g.id, '', 'Add many chapters to group ' + nm), depth < GMAXDEPTH - 1 ? btn('+ Sub-group', 'addsub', g.id, '', 'Add a sub-group inside ' + nm) : null, btn('Edit', 'rengrp', g.id, '', 'Edit group ' + nm + ' (name, colour, icon, location)'),
       mv('▲', 'grpup', i === 0, 'Move group ' + nm + ' up'), mv('▼', 'grpdown', i === n - 1, 'Move group ' + nm + ' down'), btn('Delete group', 'delgrp', g.id, 'd', 'Delete group ' + nm)) : null);
 }
 function groupedRows(list, S, s, empty) { // chapter rows, inside collapsible (and nestable) group boxes when the subject has groups
@@ -5573,8 +5765,8 @@ function groupedRows(list, S, s, empty) { // chapter rows, inside collapsible (a
       else { seq.forEach(k => { if (k[0] === 'c') { const c = byId.get(k.slice(2)); if (c) inner.push(row(c)); } else { const kg = kids.find(x => x.id === k.slice(2)), e = kg && sub(kg); if (e) inner.push(e); } }); own.filter(c => !inSeq.has('c:' + c.id)).forEach(c => inner.push(row(c))); } // archived chapters, when shown, go last
       if (!inner.length) inner.push(h('p', { class: 'text-sm mut', text: 'No chapters in this group here.' }));
     }
-    return h('section', { class: 'grid gap-3', 'data-gid': g.id, style: 'border-left:4px solid ' + col + ';background:color-mix(in srgb,' + col + ' 7%,transparent);border-radius:14px;padding:.75rem' },
-      groupHead(g, i, n, S, s, depth, isOpen, kids.length), isOpen ? h('div', { class: 'grid gap-3' }, inner) : null);
+    return h('section', { class: 'grp-box', 'data-gid': g.id, style: 'border-left:4px solid ' + col + ';background:color-mix(in srgb,' + col + ' 7%,transparent)' },
+      groupHead(g, i, n, S, s, depth, isOpen, kids.length), isOpen ? h('div', { class: 'grid gap-2' }, inner) : null);
   };
   const tops = gKids(gs, null); tops.forEach((g, i) => { const e = node(g, i, tops.length, 0); if (e) out.push(e); });
   const un = list.filter(c => !c.groupId); if (un.length) out.push(h('h4', { class: 'text-sm font-semibold mut mt-3 pt-3', style: 'border-top:1px solid var(--line)', text: 'Not in a group' }), ...srt(un).map(row));
@@ -5996,6 +6188,12 @@ const actions = {
   gcollapse: sid => { const gs = state.groups.filter(g => g.subjectId === sid), anyOpen = gs.some(g => !gClosed.has(g.id)); gs.forEach(g => { anyOpen ? gClosed.add(g.id) : gClosed.delete(g.id); }); renderSyllabus(); refocus('[data-act=gcollapse][data-id="' + sid + '"]'); }, delgrp: id => delGroupModal(id), movechs: id => moveChaptersModal(id),
   grpup: id => { if (!fail(moveGroup(id, -1))) renderSyllabus(); }, grpdown: id => { if (!fail(moveGroup(id, 1))) renderSyllabus(); }, addchg: id => chapterModal(state.groups.find(g => g.id === id).subjectId, null, id),
   chup: id => { if (!fail(reorder(id, { by: -1 }))) afterMove(id, 'chup'); }, chdown: id => { if (!fail(reorder(id, { by: 1 }))) afterMove(id, 'chdown'); }, chmove: id => moveModal(id), dhist: id => diffModal(id),
+  syledit: () => { sylEdit = !sylEdit; renderSyllabus(); refocus('[data-act=syledit]'); },
+  chdiff: id => quickDiffModal(id),
+  chmenu: id => chapterMenuModal(id),
+  gadd: id => groupAddModal(id),
+  gmenu: id => groupMenuModal(id),
+  subjmenu: id => subjectMenuModal(id),
   dhdel: s => { const [cid, dt, single] = String(s).split('|'); if (!fail(deleteDifficulty(cid, dt))) { render(); diffModal(single === '1' ? cid : ''); toast('Deleted difficulty entry from ' + fmtDate(dt).replace(/^\w+, /, '') + '.', null); } },
   revtoday: id => { if (!fail(markRevised(id, today()))) render(); }, revdate: id => revDateModal(id), revhist: id => revHistModal(id), revall: () => { revAll = !revAll; renderRevision(); },
   asec: v => { aSec = v; renderAnalytics(); refocus('[data-act=asec][data-id="' + v + '"]'); },
