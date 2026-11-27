@@ -569,9 +569,10 @@ const BASE_SUBJ = [
   ['sub_misc', 'Miscellaneous / Other', 'Other', false]
 ].map(([id, name, group, core], i) => ({ id, name, group, core, builtin: true, custom: false, col: COLORS[i] }));
 const SUBJ = new Map();
+let uiReady = false;
 function syncSubjects(st) {
   SUBJ.clear();
-  const scols = (typeof ui !== 'undefined' && ui && ui.scols) ? ui.scols : {};
+  const scols = (uiReady && ui && ui.scols) ? ui.scols : {};
   for (const b of BASE_SUBJ) SUBJ.set(b.id, { ...b, col: scols[b.id] || b.col });
   const list = st && Array.isArray(st.customSubjects) ? st.customSubjects : [];
   for (const cs of list) {
@@ -800,7 +801,7 @@ function starRow(n) {
 }
 function chapterBar(c, col) {
   const p = prog(c);
-  if (typeof ui !== 'undefined' && ui.barStyle === 'bar') return bar(p, col, c.name + ' progress');
+  if (uiReady && ui.barStyle === 'bar') return bar(p, col, c.name + ' progress');
   return h('div', { class: 'seg-trk', role: 'progressbar', 'aria-label': c.name + ' progress', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': p },
     MILESTONES.map((m, i) => h('div', { class: 'seg-pill' + (c.m[i] ? ' on' : ''), title: m + ': ' + (c.m[i] ? 'Done' : 'Pending'), style: c.m[i] ? '--seg-c:' + col + ';background:' + col : '' })));
 }
@@ -4703,7 +4704,7 @@ function extractUICfg(u) {
     scols: { ...u.scols }, dcols: { ...u.dcols }
   };
 }
-let ui = { ...UI_CFG_DEFAULT(), presets: [] }, uiPaint = null, curPal = null; const inkCache = new Map();
+let ui = { ...UI_CFG_DEFAULT(), presets: [] }, uiPaint = null, curPal = null; uiReady = true; const inkCache = new Map();
 function paletteFor(bg, txtOv, pal) {
   const light = lightBg(bg); let P;
   if (pal) P = { bg, card: pal.card, card2: pal.card2, line: pal.line, sub: pal.sub, trk: pal.trk };
@@ -5584,7 +5585,7 @@ function renderTarget() {
 }
 
 /* ===== Revision tab ===== */
-const revDays = () => (typeof ui !== 'undefined' && Number.isInteger(ui.revDays) && ui.revDays >= 1 && ui.revDays <= 180) ? ui.revDays : 21; // configurable in Settings (default 21 days)
+const revDays = () => (uiReady && Number.isInteger(ui.revDays) && ui.revDays >= 1 && ui.revDays <= 180) ? ui.revDays : 21; // configurable in Settings (default 21 days)
 function revRow(c) {
   const n = c.rev.length, last = n ? c.rev[n - 1].date : null, age = last ? dayNum(today()) - dayNum(last) : null;
   return h('div', { class: 'sub grid gap-2' }, h('div', { class: 'flex flex-wrap items-start justify-between gap-2' },
