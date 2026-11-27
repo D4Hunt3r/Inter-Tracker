@@ -558,10 +558,48 @@ label.ms-pill.tick{animation:tick .38s ease-out}
 'use strict';
 /* ===== Constants (canonical ICAI subjects live in code, never trusted from backups) ===== */
 const KEY = 'ca_inter_tracker_v1', SCHEMA = 6, MAX_IMPORT = 5 * 1024 * 1024, MAXN = 100, MAXR = 500, TRASH_DAYS = 30, SNAP = KEY + '_pre_merge_backup';
-const COLORS = ['#7c83ff', '#a78bfa', '#38bdf8', '#34d399', '#fbbf24', '#f472b6'];
-const SUBJ = new Map([['sub_aa', 'Advanced Accounting', 'Group I'], ['sub_law', 'Corporate and Other Laws', 'Group I'], ['sub_tax', 'Taxation', 'Group I'],
-  ['sub_cma', 'Cost and Management Accounting', 'Group II'], ['sub_aud', 'Auditing and Ethics', 'Group II'], ['sub_fm', 'Financial Management and Strategic Management', 'Group II']]
-  .map(([id, name, group], i) => [id, { id, name, group, col: COLORS[i] }]));
+const COLORS = ['#7c83ff', '#a78bfa', '#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#2dd4bf'];
+const BASE_SUBJ = [
+  ['sub_aa', 'Advanced Accounting', 'Group I', true],
+  ['sub_law', 'Corporate and Other Laws', 'Group I', true],
+  ['sub_tax', 'Taxation', 'Group I', true],
+  ['sub_cma', 'Cost and Management Accounting', 'Group II', true],
+  ['sub_aud', 'Auditing and Ethics', 'Group II', true],
+  ['sub_fm', 'Financial Management and Strategic Management', 'Group II', true],
+  ['sub_misc', 'Miscellaneous / Other', 'Other', false]
+].map(([id, name, group, core], i) => ({ id, name, group, core, builtin: true, custom: false, col: COLORS[i] }));
+const SUBJ = new Map();
+function syncSubjects(st) {
+  SUBJ.clear();
+  const scols = (typeof ui !== 'undefined' && ui && ui.scols) ? ui.scols : {};
+  for (const b of BASE_SUBJ) SUBJ.set(b.id, { ...b, col: scols[b.id] || b.col });
+  const list = st && Array.isArray(st.customSubjects) ? st.customSubjects : [];
+  for (const cs of list) {
+    if (!cs || typeof cs.id !== 'string' || !cs.id || SUBJ.has(cs.id) || typeof cs.name !== 'string' || !cs.name.trim()) continue;
+    SUBJ.set(cs.id, { id: cs.id, name: cs.name, group: 'Other', core: false, builtin: false, custom: true, col: /^#[0-9a-f]{6}$/i.test(cs.color || '') ? cs.color.toLowerCase() : '#fb923c' });
+  }
+}
+syncSubjects(null);
+const coreSubjs = () => [...SUBJ.values()].filter(s => s.core);
+const otherSubjs = () => [...SUBJ.values()].filter(s => !s.core);
+function validSubjSet(d) {
+  const s = new Set(BASE_SUBJ.map(b => b.id));
+  const list = d && d.settings && Array.isArray(d.settings.customSubjects) ? d.settings.customSubjects : [];
+  for (const cs of list) if (cs && typeof cs.id === 'string' && cs.id) s.add(cs.id);
+  return s;
+}
+function subjOptGroups(firstLabel) {
+  const mk = s => h('option', { value: s.id, text: s.name });
+  const g1 = [...SUBJ.values()].filter(s => s.group === 'Group I');
+  const g2 = [...SUBJ.values()].filter(s => s.group === 'Group II');
+  const ot = otherSubjs();
+  return [
+    firstLabel != null ? h('option', { value: '', text: firstLabel }) : null,
+    h('optgroup', { label: 'Group I' }, g1.map(mk)),
+    h('optgroup', { label: 'Group II' }, g2.map(mk)),
+    ot.length ? h('optgroup', { label: 'Other & Custom' }, ot.map(mk)) : null
+  ].filter(Boolean);
+}
 const LEVELS = ['Easy', 'Easy-Med', 'Medium', 'Med-Hard', 'Hard'];
 const DCOL = { Easy: '#34d399', 'Easy-Med': '#a3e635', Medium: '#fbbf24', 'Med-Hard': '#fb923c', Hard: '#f87171' };
 const MILESTONES = ['Lectures', 'Study Material Questions', 'RTP/MTP', 'Short Notes'];
@@ -569,7 +607,7 @@ const MILESTONE_SHORT = ['Lec', 'SM', 'RTP', 'Notes'];
 let sylEdit = false;
 let state, rawBad = null, sst = 'loaded', sDetail = '', tab = 'syllabus', chQ = '', dFil = '', mFil = '', aFil = 'active', lastMergeJson = null, lastFocus = null;
 const F = { sub: '', ch: '', from: '', to: '', q: '', n: 30 };
-const open = new Set(SUBJ.keys());
+const open = new Set(coreSubjs().map(s => s.id));
 const GMAXDEPTH = 3, gClosed = new Set(); // groups can nest 3 levels deep; gClosed = collapsed groups (not saved, like the subject cards)
 const GICONS = ['📘', '📗', '📙', '📕', '📚', '⚖️', '💰', '🧮', '📊', '🧾', '🏛️', '📝', '⭐', '🔥', '🎯', '🧠'], GCOLORS = ['#7c83ff', '#a78bfa', '#38bdf8', '#34d399', '#a3e635', '#fbbf24', '#fb923c', '#f472b6'];
 function gKids(gs, pid) { return gs.filter(g => (g.parentId || null) === pid); }
@@ -778,7 +816,7 @@ function setSS(s, detail = '') {
   if (ok) warn(); // a successful save clears obsolete warnings
 }
 function warn(msg) { $('#warn').replaceChildren(msg ? h('div', { class: 'p-3 rounded-xl text-sm', style: 'background:var(--badbg);border:1px solid var(--badb);color:var(--badt)', role: 'alert', text: msg }) : ''); }
-const blank = () => ({ schemaVersion: SCHEMA, chapters: [], logs: [], mocks: [], settings: { dailyTarget: null, lastExport: null, examDate: null, weeklyTarget: null, showUpFloor: null, recMin: 300, recDays: 3, recCap: 3, saverBank: 0, saverProg: [], saverCounted: [], repairedDays: [], targetHistory: [], dayTargets: {}, blBase: 1.25, blStep: 0.25, blCap: 2.0, blDays: 7, blRound: 5, blStart: null, forgivenDays: [], customPhases: [], todos: [], ttTemplates: [], ttDays: {} }, trash: [], groups: [] });
+const blank = () => ({ schemaVersion: SCHEMA, chapters: [], logs: [], mocks: [], settings: { dailyTarget: null, lastExport: null, examDate: null, weeklyTarget: null, showUpFloor: null, recMin: 300, recDays: 3, recCap: 3, saverBank: 0, saverProg: [], saverCounted: [], repairedDays: [], targetHistory: [], dayTargets: {}, blBase: 1.25, blStep: 0.25, blCap: 2.0, blDays: 7, blRound: 5, blStart: null, forgivenDays: [], customPhases: [], customSubjects: [], todos: [], ttTemplates: [], ttDays: {} }, trash: [], groups: [] });
 function persist(d) { // returns error text or null; never claims success on failure
   try { localStorage.setItem(KEY, JSON.stringify(d)); setSS('saved'); updateBin(d); if (typeof csMarkDirty === 'function') csMarkDirty(false); return null; }
   catch (e) {
@@ -794,9 +832,9 @@ function commit(fn) {
   const d = JSON.parse(JSON.stringify(state)), e = fn(d); if (e) return e;
   d.trash = d.trash.filter(x => Date.now() - Date.parse(x.deletedAt) < TRASH_DAYS * 864e5).slice(-500); // expired bin items go for good
   const pe = persist(d); if (pe) return pe;
-  state = d; return null;
+  state = d; syncSubjects(state.settings); return null;
 }
-function applyState(d) { const e = persist(d); if (e) return e; state = d; rawBad = null; return null; } // used by import / start fresh
+function applyState(d) { const e = persist(d); if (e) return e; state = d; syncSubjects(state.settings); rawBad = null; return null; } // used by import / start fresh
 
 /* ===== Private GitHub Gist Cloud Sync (offline-first, token kept strictly local, never exported in backups) ===== */
 const CS_KEY = 'ca_inter_tracker_cloud_v1', CS_FILE = 'ca_inter_study_tracker_sync.json', CS_LOOK_FILE = 'ca_inter_tracker_look.json';
@@ -1113,11 +1151,11 @@ function migrate(d) {
   return { d };
 }
 // Per-record checks, reused for recycle-bin items (cmap = Map of chapter id -> chapter)
-function logErr(l, cmap, lenient) {
+function logErr(l, cmap, lenient, sids = SUBJ) {
   if (!l || typeof l !== 'object') return 'not an object.';
   if (typeof l.id !== 'string' || !l.id || l.id.length > 80) return 'invalid ID.';
   if (!isDate(l.date)) return 'invalid calendar date.';
-  if (!SUBJ.has(l.subjectId)) return 'unknown subject.';
+  if (!sids.has(l.subjectId)) return 'unknown subject.';
   if (l.chapterId !== null && typeof l.chapterId !== 'string') return 'invalid chapter reference.';
   if (l.chapterId !== null && !lenient) { const c = cmap.get(l.chapterId); if (!c) return 'references a missing chapter.'; if (c.subjectId !== l.subjectId) return 'chapter belongs to a different subject.'; }
   if (typeof l.chapterName !== 'string' || l.chapterName.length > MAXN) return 'invalid chapter name snapshot.';
@@ -1135,20 +1173,30 @@ function logErr(l, cmap, lenient) {
   }
   return !isTs(l.created) || !isTs(l.updated) ? 'invalid timestamps.' : null;
 }
-function mockErr(k) {
+function mockErr(k, sids = SUBJ) {
   if (!k || typeof k !== 'object') return 'not an object.';
   if (typeof k.id !== 'string' || !k.id || k.id.length > 80) return 'invalid ID.';
   if (!isDate(k.date)) return 'invalid calendar date.';
   if (typeof k.name !== 'string' || !clean(k.name) || k.name.length > MAXN) return 'invalid name.';
-  if (!SUBJ.has(k.subjectId)) return 'unknown subject.';
+  if (!sids.has(k.subjectId)) return 'unknown subject.';
   if (!two(k.total) || k.total <= 0 || k.total > 1000 || !two(k.marks) || k.marks < 0 || k.marks > k.total) return 'invalid marks.';
   return typeof k.remarks !== 'string' || k.remarks.length > MAXR || !isTs(k.created) ? 'invalid remarks or timestamp.' : null;
 }
 function validate(d) { // returns an error string, or null when valid
   if (d.chapters.length > 2000 || d.logs.length > 50000) return 'Too many records.';
   if (!Array.isArray(d.groups) || d.groups.length > 200) return 'Groups are missing or too many.';
+  const sids = new Set(BASE_SUBJ.map(b => b.id)), snames = new Set(BASE_SUBJ.map(b => norm(b.name)));
+  if (d.settings && typeof d.settings === 'object' && d.settings.customSubjects != null) {
+    if (!Array.isArray(d.settings.customSubjects) || d.settings.customSubjects.length > 20) return 'Invalid custom subjects (max 20).';
+    for (const cs of d.settings.customSubjects) {
+      if (!cs || typeof cs !== 'object' || typeof cs.id !== 'string' || !cs.id || cs.id.length > 80 || sids.has(cs.id)
+        || typeof cs.name !== 'string' || !clean(cs.name) || cs.name.length > 60 || snames.has(norm(cs.name))
+        || (cs.color != null && !(typeof cs.color === 'string' && /^#[0-9a-f]{6}$/i.test(cs.color)))) return 'Invalid custom subject.';
+      sids.add(cs.id); snames.add(norm(cs.name));
+    }
+  }
   const gmap = new Map(), gnames = new Set();
-  for (const [i, g] of d.groups.entries()) { const w = 'Group #' + (i + 1) + ': ', e = groupErr(g); if (e) return w + e; if (gmap.has(g.id)) return w + 'duplicate ID.'; const k = g.subjectId + '|' + (g.parentId || '') + '|' + norm(g.name); if (gnames.has(k)) return w + 'duplicate name in the same subject.'; gnames.add(k); gmap.set(g.id, g); }
+  for (const [i, g] of d.groups.entries()) { const w = 'Group #' + (i + 1) + ': ', e = groupErr(g, sids); if (e) return w + e; if (gmap.has(g.id)) return w + 'duplicate ID.'; const k = g.subjectId + '|' + (g.parentId || '') + '|' + norm(g.name); if (gnames.has(k)) return w + 'duplicate name in the same subject.'; gnames.add(k); gmap.set(g.id, g); }
   for (const g of d.groups) { if (!g.parentId) continue; let p = gmap.get(g.parentId), n = 1; if (!p || p.subjectId !== g.subjectId) return 'Group “' + g.name + '”: invalid parent group.'; while (p.parentId) { p = gmap.get(p.parentId); if (!p || ++n > GMAXDEPTH - 1) return 'Group “' + g.name + '”: nesting is invalid or too deep.'; } }
   const cids = new Map(), names = new Set(), lids = new Set();
   for (const [i, c] of d.chapters.entries()) {
@@ -1157,7 +1205,7 @@ function validate(d) { // returns an error string, or null when valid
     if (typeof c.id !== 'string' || !c.id || c.id.length > 80) return w + 'invalid ID.';
     if (cids.has(c.id)) return w + 'duplicate ID.';
     if (typeof c.name !== 'string' || !clean(c.name) || c.name.length > MAXN) return w + 'invalid name.';
-    if (!SUBJ.has(c.subjectId)) return w + 'unknown subject.';
+    if (!sids.has(c.subjectId)) return w + 'unknown subject.';
     const k = c.subjectId + '|' + norm(c.name); if (names.has(k)) return w + 'duplicate chapter name in the same subject.'; names.add(k);
     if (!Array.isArray(c.m) || c.m.length !== 4 || c.m.some(x => typeof x !== 'boolean')) return w + 'milestones must be exactly four true/false values.';
     if (typeof c.archived !== 'boolean') return w + 'invalid archived flag.';
@@ -1174,7 +1222,7 @@ function validate(d) { // returns an error string, or null when valid
     if (typeof l.id !== 'string' || !l.id || l.id.length > 80) return w + 'invalid ID.';
     if (lids.has(l.id)) return w + 'duplicate ID.'; lids.add(l.id);
     if (!isDate(l.date)) return w + 'invalid calendar date.';
-    if (!SUBJ.has(l.subjectId)) return w + 'unknown subject.';
+    if (!sids.has(l.subjectId)) return w + 'unknown subject.';
     if (l.chapterId !== null) { const c = cids.get(l.chapterId); if (!c) return w + 'references a missing chapter.'; if (c.subjectId !== l.subjectId) return w + 'chapter belongs to a different subject.'; }
     if (typeof l.chapterName !== 'string' || l.chapterName.length > MAXN) return w + 'invalid chapter name snapshot.';
     if (!Number.isInteger(l.minutes) || l.minutes < 0 || l.minutes > 1440) return w + 'minutes must be a whole number from 0 to 1440.';
@@ -1199,7 +1247,7 @@ function validate(d) { // returns an error string, or null when valid
     if (typeof k.id !== 'string' || !k.id || k.id.length > 80 || mids.has(k.id)) return w + 'invalid or duplicate ID.'; mids.add(k.id);
     if (!isDate(k.date)) return w + 'invalid calendar date.';
     if (typeof k.name !== 'string' || !clean(k.name) || k.name.length > MAXN) return w + 'invalid name.';
-    if (!SUBJ.has(k.subjectId)) return w + 'unknown subject.';
+    if (!sids.has(k.subjectId)) return w + 'unknown subject.';
     if (!two(k.total) || k.total <= 0 || k.total > 1000 || !two(k.marks) || k.marks < 0 || k.marks > k.total) return w + 'invalid marks.';
     if (typeof k.remarks !== 'string' || k.remarks.length > MAXR || !isTs(k.created)) return w + 'invalid remarks or timestamp.';
   }
@@ -1210,7 +1258,7 @@ function validate(d) { // returns an error string, or null when valid
     if (!x || typeof x !== 'object') return w + 'not an object.';
     if (typeof x.id !== 'string' || !x.id || x.id.length > 80 || tids.has(x.id)) return w + 'invalid or duplicate ID.'; tids.add(x.id);
     if (!isTs(x.deletedAt)) return w + 'invalid deletion timestamp.';
-    const e = x.kind === 'log' ? logErr(x.item, cids, true) : x.kind === 'mock' ? mockErr(x.item) : x.kind === 'chapter' ? chapErr(x.item) : x.kind === 'group' ? groupErr(x.item) : 'unknown kind.'; if (e) return w + e;
+    const e = x.kind === 'log' ? logErr(x.item, cids, true, sids) : x.kind === 'mock' ? mockErr(x.item, sids) : x.kind === 'chapter' ? chapErr(x.item, sids) : x.kind === 'group' ? groupErr(x.item, sids) : 'unknown kind.'; if (e) return w + e;
     if (x.kind === 'group' && (!Array.isArray(x.chapterIds) || x.chapterIds.length > 2000 || x.chapterIds.some(i => typeof i !== 'string') || !Number.isInteger(x.pos) || x.pos < 0 || (x.childIds !== undefined && (!Array.isArray(x.childIds) || x.childIds.length > 200 || x.childIds.some(i => typeof i !== 'string'))))) return w + 'invalid group restore data.';
     if (x.kind === 'chapter' && (!Array.isArray(x.logIds) || x.logIds.length > 50000 || x.logIds.some(i => typeof i !== 'string') || !Number.isInteger(x.pos) || x.pos < 0)) return w + 'invalid chapter restore data.';
     const live = x.kind === 'log' ? lids : x.kind === 'mock' ? mids : x.kind === 'chapter' ? cids : gmap, seen = x.kind === 'log' ? tl : x.kind === 'mock' ? tm : x.kind === 'chapter' ? tc : tg;
@@ -1268,7 +1316,7 @@ function validate(d) { // returns an error string, or null when valid
     && validSlot(b.slot)
     && (b.time == null || (typeof b.time === 'string' && b.time.length <= 40))
     && typeof b.title === 'string' && clean(b.title).length > 0 && b.title.length <= 140
-    && (b.subjectId == null || SUBJ.has(b.subjectId))
+    && (b.subjectId == null || sids.has(b.subjectId))
     && (b.chapterId == null || (typeof b.chapterId === 'string' && b.chapterId.length <= 80))
     && (!hasDone || b.done === undefined || typeof b.done === 'boolean');
   if (st.todos != null) {
@@ -1279,7 +1327,7 @@ function validate(d) { // returns an error string, or null when valid
         || !isDate(t.date) || typeof t.text !== 'string' || !clean(t.text) || t.text.length > 160
         || typeof t.done !== 'boolean' || !(t.doneAt == null || isTs(t.doneAt))
         || !validPri(t.pri || 'normal')
-        || !(t.subjectId == null || SUBJ.has(t.subjectId))
+        || !(t.subjectId == null || sids.has(t.subjectId))
         || !(t.chapterId == null || (typeof t.chapterId === 'string' && t.chapterId.length <= 80))
         || !(t.rolls == null || (Number.isInteger(t.rolls) && t.rolls >= 0 && t.rolls <= 999))) return 'Invalid to-do item.';
       tdIds.add(t.id);
@@ -1338,24 +1386,25 @@ function cleanDiffHist(dh) { // sorts chronologically, keeps latest per date, an
   return out;
 }
 function loadData() {
-  let raw; try { raw = localStorage.getItem(KEY); } catch (e) { state = blank(); setSS('unavailable'); warn('Browser storage is unavailable, so nothing can be saved. Use Backup & Data to export your work.'); return; }
-  if (raw === null) { state = blank(); persist(state); return; } // first launch only
+  let raw; try { raw = localStorage.getItem(KEY); } catch (e) { state = blank(); syncSubjects(state.settings); setSS('unavailable'); warn('Browser storage is unavailable, so nothing can be saved. Use Backup & Data to export your work.'); return; }
+  if (raw === null) { state = blank(); syncSubjects(state.settings); persist(state); return; } // first launch only
   const p = parseBackup(raw);
-  if (p.d) { state = p.d; setSS('loaded'); try { for (const k of Object.keys(localStorage)) if (k.startsWith(KEY + '_corrupt_') && localStorage.getItem(k) === raw) localStorage.removeItem(k); } catch (_) {} try { if (JSON.parse(raw).schemaVersion < SCHEMA) { localStorage.setItem(KEY + '_pre_migration_backup', raw); persist(state); } else if (p.dhCleaned) { persist(state); } } catch (_) {} return; }
-  state = blank(); rawBad = raw;
+  if (p.d) { state = p.d; syncSubjects(state.settings); setSS('loaded'); try { for (const k of Object.keys(localStorage)) if (k.startsWith(KEY + '_corrupt_') && localStorage.getItem(k) === raw) localStorage.removeItem(k); } catch (_) {} try { if (JSON.parse(raw).schemaVersion < SCHEMA) { localStorage.setItem(KEY + '_pre_migration_backup', raw); persist(state); } else if (p.dhCleaned) { persist(state); } } catch (_) {} return; }
+  state = blank(); syncSubjects(state.settings); rawBad = raw;
   try { localStorage.setItem(KEY + '_corrupt_' + Date.now(), raw); } catch (_) {} // extra preserved copy
   if (p.future) setSS('future', 'schema version ' + p.future); else setSS('corrupt', p.err);
 }
 
 /* ===== Calculations (single source of truth) ===== */
 function stats(logs = state.logs) {
-  const S = { chap: new Map(), sub: new Map(), total: 0, n: logs.length, days: new Set(), focus: 0, week: new Map(), month: new Map(), date: new Map(), grp: { 'Group I': 0, 'Group II': 0 } };
+  const S = { chap: new Map(), sub: new Map(), total: 0, n: logs.length, days: new Set(), focus: 0, week: new Map(), month: new Map(), date: new Map(), grp: { 'Group I': 0, 'Group II': 0, Other: 0 } };
   const add = (m, k, v) => m.set(k, (m.get(k) || 0) + v);
   for (const l of logs) {
     const lm = logMins(l);
     if (l.chapterId) add(S.chap, l.chapterId, lm);
     add(S.sub, l.subjectId, lm); add(S.week, weekStart(l.date), lm); add(S.month, l.date.slice(0, 7), lm); add(S.date, l.date, lm);
-    S.grp[SUBJ.get(l.subjectId).group] += lm; S.total += lm; S.focus += l.focus; S.days.add(l.date);
+    const sg = (SUBJ.get(l.subjectId) || {}).group || 'Other';
+    S.grp[sg] = (S.grp[sg] || 0) + lm; S.total += lm; S.focus += l.focus; S.days.add(l.date);
   }
   return S;
 }
@@ -1538,6 +1587,112 @@ function deleteCustomPhase(id) {
     d.settings.customPhases = d.settings.customPhases.filter(x => x.id !== id);
   });
 }
+
+/* ===== v11.2 Custom Subjects & Miscellaneous Support (Schema v6 compatible) ===== */
+function ensureCustomSubjList(st) {
+  if (!Array.isArray(st.customSubjects)) st.customSubjects = [];
+}
+function saveCustomSubject(x) {
+  let savedId = null;
+  const err = commit(d => {
+    ensureCustomSubjList(d.settings);
+    const name = clean(x.name || '');
+    if (!name) return 'Enter a subject or category name.';
+    if (name.length > 60) return 'Name is too long (max 60 characters).';
+    const color = /^#[0-9a-f]{6}$/i.test(x.color || '') ? x.color.toLowerCase() : '#fb923c';
+    if (BASE_SUBJ.some(b => norm(b.name) === norm(name))) return 'That name matches a built-in subject. Choose a different name.';
+    if (d.settings.customSubjects.some(c => c.id !== x.id && norm(c.name) === norm(name))) return 'A custom subject with that name already exists.';
+    if (x.id) {
+      const hit = d.settings.customSubjects.find(c => c.id === x.id);
+      if (!hit) return 'Custom subject not found.';
+      hit.name = name; hit.color = color; savedId = hit.id;
+    } else {
+      if (d.settings.customSubjects.length >= 20) return 'Maximum 20 custom subjects reached. Delete an unused one first.';
+      savedId = uid('csub');
+      d.settings.customSubjects.push({ id: savedId, name, color });
+    }
+  });
+  return { err, id: savedId };
+}
+function deleteCustomSubject(id) {
+  const err = commit(d => {
+    ensureCustomSubjList(d.settings);
+    const hit = d.settings.customSubjects.find(c => c.id === id);
+    if (!hit) return 'Custom subject not found.';
+    const tag = ' (' + hit.name + ')';
+    // Move all chapters, groups, logs, mocks, todos, timetable blocks & bin items safely to Miscellaneous / Other (sub_misc)
+    const miscChNames = new Set(d.chapters.filter(c => c.subjectId === 'sub_misc').map(c => norm(c.name)));
+    for (const c of d.chapters) {
+      if (c.subjectId !== id) continue;
+      c.subjectId = 'sub_misc'; c.groupId = null;
+      if (miscChNames.has(norm(c.name))) {
+        let base = (c.name + tag).slice(0, MAXN), k = 2;
+        while (miscChNames.has(norm(base))) { base = (c.name + ' (' + (k++) + ')').slice(0, MAXN); }
+        c.name = base;
+      }
+      miscChNames.add(norm(c.name));
+    }
+    d.groups = d.groups.filter(g => g.subjectId !== id);
+    for (const l of d.logs) if (l.subjectId === id) l.subjectId = 'sub_misc';
+    for (const m of d.mocks) if (m.subjectId === id) m.subjectId = 'sub_misc';
+    if (Array.isArray(d.settings.todos)) for (const t of d.settings.todos) if (t.subjectId === id) t.subjectId = 'sub_misc';
+    if (Array.isArray(d.settings.ttTemplates)) for (const tp of d.settings.ttTemplates) for (const b of (tp.blocks || [])) if (b.subjectId === id) b.subjectId = 'sub_misc';
+    if (d.settings.ttDays && typeof d.settings.ttDays === 'object') for (const arr of Object.values(d.settings.ttDays)) if (Array.isArray(arr)) for (const b of arr) if (b.subjectId === id) b.subjectId = 'sub_misc';
+    for (const x of d.trash) {
+      if (x && x.item && x.item.subjectId === id) {
+        if (x.kind === 'group') x.item.subjectId = 'sub_misc';
+        else { x.item.subjectId = 'sub_misc'; if (x.kind === 'chapter') x.item.groupId = null; }
+      }
+    }
+    d.settings.customSubjects = d.settings.customSubjects.filter(c => c.id !== id);
+  });
+  if (!err) {
+    if (R.sub === id) { R.sub = ''; R.ch = ''; R.grp = ''; }
+    if (F.sub === id) { F.sub = ''; F.ch = ''; }
+    if (mFil === id) mFil = '';
+    if (stickyLog.subjectId === id) saveSticky('sub_misc', '');
+    if (tm.subjectId === id) { tm.subjectId = 'sub_misc'; tm.chapterId = ''; saveTimer(); }
+    open.delete(id);
+  }
+  return err;
+}
+function customSubjectModal(editId) {
+  const existing = editId ? (state.settings.customSubjects || []).find(c => c.id === editId) : null;
+  const nameInp = h('input', { class: 'inp', maxlength: 60, value: existing ? existing.name : '', placeholder: 'e.g. Notes & Research, B.Com (DU SOL), ICAI Amendments', 'aria-label': 'Custom subject name' });
+  let colVal = existing ? existing.color : '#fb923c';
+  const customCol = h('input', { type: 'color', value: colVal, 'aria-label': 'Custom colour', style: 'width:40px;height:36px;padding:0;border:0;background:none;cursor:pointer' });
+  const colRow = h('div', { class: 'flex flex-wrap items-center gap-2' });
+  const paintCols = () => {
+    colRow.replaceChildren(
+      ...['#2dd4bf', '#fb923c', '#f472b6', '#a3e635', '#38bdf8', '#c084fc', '#fbbf24', '#94a3b8'].map(c =>
+        h('button', { type: 'button', 'aria-label': 'Colour ' + c, 'aria-pressed': String(colVal === c), style: 'width:32px;height:32px;border-radius:99px;cursor:pointer;background:' + c + ';border:3px solid ' + (colVal === c ? 'var(--txt)' : 'transparent') + ';box-shadow:0 0 0 1px var(--line)', onclick: () => { colVal = c; customCol.value = c; paintCols(); } })),
+      customCol);
+  };
+  customCol.addEventListener('change', () => { colVal = customCol.value.toLowerCase(); paintCols(); });
+  paintCols();
+  const err = h('p', { class: 'text-xs', style: 'color:var(--bad)', role: 'alert' });
+  nameInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modal .btn.p').click(); } });
+  modal(existing ? 'Edit custom subject' : 'Add custom subject / category', h('div', { class: 'grid gap-3 text-xs' },
+    h('p', { class: 'mut', text: 'Counts 100% toward your study hours, daily target, streak, backlog set-off & XP — without skewing your 6 ICAI papers’ syllabus % or Pass Simulator.' }),
+    h('label', { class: 'grid gap-1' }, h('span', { class: 'mut font-medium', text: 'Subject / Category name' }), nameInp),
+    h('div', { class: 'grid gap-1.5' }, h('span', { class: 'mut font-medium', text: 'Badge & chart colour' }), colRow),
+    err),
+  [{ t: 'Cancel' }, { t: existing ? 'Save changes' : 'Add subject', c: 'p', f: () => {
+    const r = saveCustomSubject({ id: existing ? existing.id : null, name: nameInp.value, color: colVal });
+    if (r.err) { err.textContent = r.err; return false; }
+    if (!existing && r.id) open.add(r.id);
+    render();
+    toast((existing ? 'Updated' : 'Added') + ' custom subject “' + clean(nameInp.value) + '”.', null);
+  } }]);
+}
+function delCustomSubjectModal(id) {
+  const s = SUBJ.get(id); if (!s || !s.custom) return;
+  const nLogs = state.logs.filter(l => l.subjectId === id).length;
+  const nCh = state.chapters.filter(c => c.subjectId === id).length;
+  confirmM('Delete custom subject “' + s.name + '”? ' + (nLogs || nCh ? 'Its ' + [nLogs ? nLogs + ' session' + (nLogs === 1 ? '' : 's') : null, nCh ? nCh + ' chapter' + (nCh === 1 ? '' : 's') : null].filter(Boolean).join(' & ') + ' will be safely moved to Miscellaneous / Other — zero hours are lost.' : 'No sessions or chapters are attached to it.'),
+    () => { const e = deleteCustomSubject(id); if (!e) { render(); toast('Deleted “' + s.name + '” (data moved to Miscellaneous / Other).', null); } return e; }, 'Delete subject');
+}
+
 function customPhaseModal(prefill) {
   const curDays = (prefill && Array.isArray(prefill.days)) ? prefill.days : currentWeekTargets();
   const cfg = motCfg();
@@ -2086,10 +2241,12 @@ function subjectMenuModal(sid) {
   const s = SUBJ.get(sid); if (!s) return;
   const hasG = state.groups.some(g => g.subjectId === sid), go = fn => { closeM(); fn(); };
   modal('Manage · ' + s.name, h('div', { class: 'grid gap-2' },
-    h('button', { type: 'button', class: 'btn p', onclick: () => go(() => chapterModal(sid)), text: '+ Add chapter' }),
-    h('button', { type: 'button', class: 'btn', onclick: () => go(() => bulkModal(sid)), text: '+ Add many chapters (paste a list)' }),
+    h('button', { type: 'button', class: 'btn p', onclick: () => go(() => chapterModal(sid)), text: '+ Add chapter / topic' }),
+    h('button', { type: 'button', class: 'btn', onclick: () => go(() => bulkModal(sid)), text: '+ Add many (paste a list)' }),
     h('button', { type: 'button', class: 'btn', onclick: () => go(() => groupModal(sid)), text: '+ Add group / module' }),
-    hasG ? h('button', { type: 'button', class: 'btn', onclick: () => go(() => moveChaptersModal(sid)), text: 'Move chapters to a group' }) : null),
+    hasG ? h('button', { type: 'button', class: 'btn', onclick: () => go(() => moveChaptersModal(sid)), text: 'Move chapters to a group' }) : null,
+    s.custom ? h('button', { type: 'button', class: 'btn', onclick: () => go(() => customSubjectModal(sid)), text: 'Edit subject name / colour' }) : null,
+    s.custom ? h('button', { type: 'button', class: 'btn d', onclick: () => go(() => delCustomSubjectModal(sid)), text: 'Delete custom subject' }) : null),
   [{ t: 'Close' }]);
 }
 function chapterRow(c, S, col) {
@@ -2162,7 +2319,7 @@ function subjectCard(s, S) {
 }
 function renderSyllabus() {
   const S = stats(); let ch = 0, done = 0;
-  for (const s of SUBJ.values()) { const t = subjectStat(s.id); ch += t.act.length; done += t.done; }
+  for (const s of coreSubjs()) { const t = subjectStat(s.id); ch += t.act.length; done += t.done; }
   const pct = ch ? Math.round(done / (ch * 4) * 100) : 0, stat = (t, v) => h('div', {}, h('div', { class: 'text-xs mut', text: t }), h('div', { class: 'text-lg sm:text-xl font-semibold num', text: v }));
   const archN = state.chapters.filter(c => c.archived).length, asel = h('select', { class: 'inp', style: 'width:auto;min-height:36px;padding:.2rem .55rem;font-size:.82rem', 'aria-label': 'Show active or archived chapters', onchange: e => { aFil = e.target.value; renderSyllabus(); } }, h('option', { value: 'active', text: 'Active' }), h('option', { value: 'archived', text: 'Archived (' + archN + ')' }), h('option', { value: 'all', text: 'All' })); asel.value = aFil;
   ensureView(); VI = { last: new Map() }; for (const l of state.logs) if (l.chapterId && (!VI.last.has(l.chapterId) || l.date > VI.last.get(l.chapterId))) VI.last.set(l.chapterId, l.date);
@@ -2180,6 +2337,11 @@ function renderSyllabus() {
       h('div', { class: 'syl-ctrl-row' }, vbtn, mbtn, asel, btn('Diff history', 'dhist', '', '', 'Difficulty history for all chapters'))));
   if (gAct) root.append(h('div', { class: 'sub text-sm flex flex-wrap items-center justify-between gap-2', role: 'status' }, h('span', { class: 'break-words min-w-0', text: 'All subjects · ' + vDescribe(vGlobal).join(' · ') + ' (a subject with its own settings keeps them)' }), btn('Clear', 'vclear', '', '', 'Clear sort and filter for all subjects')));
   for (const g of ['Group I', 'Group II']) root.append(h('section', {}, h('h2', { class: 'text-sm font-semibold tracking-widest mut mb-2.5', text: g.toUpperCase() }), h('div', { class: 'grid gap-3.5' }, [...SUBJ.values()].filter(s => s.group === g).map(s => subjectCard(s, S)))));
+  root.append(h('section', {},
+    h('div', { class: 'flex flex-wrap items-center justify-between gap-2 mb-2.5' },
+      h('h2', { class: 'text-sm font-semibold tracking-widest mut', text: 'OTHER & CUSTOM SUBJECTS' }),
+      h('button', { type: 'button', class: 'btn s', 'data-act': 'csubadd' }, ico('plus', 13), 'Custom Subject')),
+    h('div', { class: 'grid gap-3.5' }, otherSubjs().map(s => subjectCard(s, S)))));
   mount(root);
 }
 function chapterModal(sid, cid, gid) {
@@ -2231,7 +2393,7 @@ function fillChapSelect(chapEl, sid, sel) {
 
 function logForm(init, onSave, submitText, reset, keepCh) {
   const date = h('input', { type: 'date', class: 'inp', ...(reset ? { id: 'dl-date' } : {}), required: true, max: today(), value: init.date, 'aria-label': 'Date' });
-  const subj = h('select', { class: 'inp', ...(reset ? { id: 'dl-sub' } : {}), 'aria-label': 'Subject' }, h('option', { value: '', text: 'Select a subject…' }), [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name }))), chap = h('select', { class: 'inp', ...(reset ? { id: 'dl-ch' } : {}), 'aria-label': 'Chapter' });
+  const subj = h('select', { class: 'inp', ...(reset ? { id: 'dl-sub' } : {}), 'aria-label': 'Subject' }, subjOptGroups('Select a subject…')), chap = h('select', { class: 'inp', ...(reset ? { id: 'dl-ch' } : {}), 'aria-label': 'Chapter' });
   const fill = sel => fillChapSelect(chap, subj.value, sel);
   subj.value = init.subjectId; fill(init.chapterId);
   subj.addEventListener('change', () => { fill(''); if (reset) saveSticky(subj.value, ''); });
@@ -2525,8 +2687,7 @@ function renderTimerBox() {
   }
   const elMs = tmElapsed(), hasTime = elMs >= 1000;
   const tmSub = h('select', { class: 'inp', style: 'min-height:38px;padding:.3rem .65rem;font-size:.85rem', 'aria-label': 'Timer subject' },
-    h('option', { value: '', text: 'Pick subject for instant auto-log…' }),
-    [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name })));
+    subjOptGroups('Pick subject for instant auto-log…'));
   const tmCh = h('select', { class: 'inp', style: 'min-height:38px;padding:.3rem .65rem;font-size:.85rem', 'aria-label': 'Timer chapter' });
   tmSub.value = SUBJ.has(tm.subjectId) ? tm.subjectId : '';
   fillChapSelect(tmCh, tmSub.value, tm.chapterId);
@@ -2832,7 +2993,7 @@ function todoEditModal(id) {
   const pri = h('select', { class: 'inp', 'aria-label': 'Priority' },
     [['must', 'Must-Do (Core Goal)'], ['normal', 'Normal'], ['bonus', 'Bonus (Stretch)']].map(([v, l]) => h('option', { value: v, text: l })));
   pri.value = t.pri || 'normal';
-  const sub = h('select', { class: 'inp', 'aria-label': 'Subject (optional)' }, h('option', { value: '', text: 'No specific subject' }), [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name })));
+  const sub = h('select', { class: 'inp', 'aria-label': 'Subject (optional)' }, subjOptGroups('No specific subject'));
   const ch = h('select', { class: 'inp', 'aria-label': 'Chapter (optional)' });
   sub.value = t.subjectId && SUBJ.has(t.subjectId) ? t.subjectId : '';
   fillChapSelect(ch, sub.value, t.chapterId || '');
@@ -2904,8 +3065,7 @@ function renderTodoView() {
   // Quick-add task composer
   const txtInp = h('input', { id: 'td-new-txt', type: 'text', class: 'inp', maxlength: 160, placeholder: 'Add a flexible task for ' + (dayTag ? dayTag.toLowerCase() : fmtDate(todoDate).replace(/^\w+, /, '')) + '… (e.g. Solve 10 Tax SM Qs)', 'aria-label': 'New task' });
   const subSel = h('select', { class: 'inp', style: 'min-height:38px;padding:.25rem .6rem;font-size:.84rem', 'aria-label': 'Link subject (optional)' },
-    h('option', { value: '', text: 'Subject: optional' }),
-    [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name })));
+    subjOptGroups('Subject: optional'));
   const chSel = h('select', { class: 'inp', style: 'min-height:38px;padding:.25rem .6rem;font-size:.84rem', 'aria-label': 'Link chapter (optional)' });
   fillChapSelect(chSel, '', '');
   subSel.addEventListener('change', () => fillChapSelect(chSel, subSel.value, ''));
@@ -3006,8 +3166,7 @@ function renderTimetableView() {
   const titleInp = h('input', { id: 'tt-new-title', type: 'text', class: 'inp', maxlength: 140, placeholder: 'Activity / paper block (e.g. Taxation Lectures, Accounts SM Qs)', 'aria-label': 'Timetable block activity' });
   const timeInp = h('input', { type: 'text', class: 'inp num', maxlength: 40, placeholder: 'Optional time (e.g. 7:00 – 8:30 AM)', 'aria-label': 'Optional time label' });
   const subSel = h('select', { class: 'inp', style: 'min-height:38px;padding:.25rem .6rem;font-size:.84rem', 'aria-label': 'Link subject (optional)' },
-    h('option', { value: '', text: 'Subject: optional' }),
-    [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name })));
+    subjOptGroups('Subject: optional'));
   const chSel = h('select', { class: 'inp', style: 'min-height:38px;padding:.25rem .6rem;font-size:.84rem', 'aria-label': 'Link chapter (optional)' });
   fillChapSelect(chSel, '', '');
   subSel.addEventListener('change', () => fillChapSelect(chSel, subSel.value, ''));
@@ -3107,7 +3266,7 @@ function renderDailyLogs() {
   if (logView === 'todo') { mount(renderTodoView()); return; }
   if (logView === 'tt') { mount(renderTimetableView()); return; }
   const fin = (k, el) => h('label', { class: 'grid gap-1 text-xs' }, h('span', { class: 'mut', text: k }), el), refresh = () => { F.n = 30; renderLogHistory(); };
-  const fs = h('select', { class: 'inp', 'aria-label': 'Filter by subject', onchange: e => { F.sub = e.target.value; F.ch = ''; fillFc(); refresh(); } }, h('option', { value: '', text: 'All subjects' }), [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name })));
+  const fs = h('select', { class: 'inp', 'aria-label': 'Filter by subject', onchange: e => { F.sub = e.target.value; F.ch = ''; fillFc(); refresh(); } }, subjOptGroups('All subjects'));
   const fc = h('select', { class: 'inp', 'aria-label': 'Filter by chapter', onchange: e => { F.ch = e.target.value; refresh(); } });
   const fillFc = () => { fc.replaceChildren(h('option', { value: '', text: 'All chapters' }), h('option', { value: '__gen', text: 'General Study' }), ...(F.sub ? state.chapters.filter(c => c.subjectId === F.sub).map(c => h('option', { value: c.id, text: c.name + (c.archived ? ' (archived)' : '') })) : [])); fc.value = F.ch; }; fs.value = F.sub; fillFc();
   const dI = (k, key) => h('input', { type: 'date', class: 'inp', value: F[key], 'aria-label': k, onchange: e => { F[key] = e.target.value; refresh(); } });
@@ -3548,7 +3707,7 @@ function focusCard(logs) {
 // 6. Effort vs. Outcome — Study ROI (time share vs mock avg vs syllabus %)
 function roiCard(S) {
   const mk = sortedMocks();
-  const rows = [...SUBJ.values()].map(s => {
+  const rows = [...SUBJ.values()].filter(s => s.core || (S.sub.get(s.id) || 0) > 0 || mk.some(m => m.subjectId === s.id)).map(s => {
     const mins = S.sub.get(s.id) || 0, share = S.total ? Math.round(mins / S.total * 1000) / 10 : 0;
     const st = subjectStat(s.id), L = mk.filter(m => m.subjectId === s.id);
     const mockAvg = L.length ? Math.round(L.reduce((a, m) => a + pctOf(m), 0) / L.length * 10) / 10 : null;
@@ -3627,7 +3786,7 @@ function neglectCard() {
 // 8. Subject Share SVG Donut + Group I / II Split Card
 function subjectDonutCard(S) {
   const NS = 'http://www.w3.org/2000/svg', mk = (t, a) => { const e = document.createElementNS(NS, t); for (const [k, v] of Object.entries(a || {})) e.setAttribute(k, v); return e; };
-  const subs = [...SUBJ.values()].map(s => ({ s, m: S.sub.get(s.id) || 0, pct: S.total ? (S.sub.get(s.id) || 0) / S.total * 100 : 0 }));
+  const subs = [...SUBJ.values()].filter(s => s.core || (S.sub.get(s.id) || 0) > 0).map(s => ({ s, m: S.sub.get(s.id) || 0, pct: S.total ? (S.sub.get(s.id) || 0) / S.total * 100 : 0 }));
   const size = 184, r = 68, sw = 22, circ = 2 * Math.PI * r;
   const svg = mk('svg', { width: size, height: size, viewBox: '0 0 ' + size + ' ' + size, style: 'display:block;margin:0 auto', role: 'img', 'aria-label': 'Subject share of study hours' });
   svg.append(mk('circle', { cx: size / 2, cy: size / 2, r, fill: 'none', stroke: 'var(--trk)', 'stroke-width': sw }));
@@ -3644,7 +3803,9 @@ function subjectDonutCard(S) {
   const c1 = mk('text', { class: 'num', x: size / 2, y: size / 2 - 6, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: 'var(--txt)', 'font-size': '19', 'font-weight': '700' }); c1.textContent = fmtH(S.total);
   const c2 = mk('text', { x: size / 2, y: size / 2 + 13, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: 'var(--mut)', 'font-size': '10' }); c2.textContent = 'Total study';
   svg.append(c1, c2);
-  const g1p = S.total ? Math.round(S.grp['Group I'] / S.total * 1000) / 10 : 0, g2p = S.total ? Math.round((100 - g1p) * 10) / 10 : 0;
+  const g1p = S.total ? Math.round((S.grp['Group I'] || 0) / S.total * 1000) / 10 : 0;
+  const gop = S.total ? Math.round((S.grp.Other || 0) / S.total * 1000) / 10 : 0;
+  const g2p = S.total ? Math.max(0, Math.round((100 - g1p - gop) * 10) / 10) : 0;
   return h('section', { class: 'card p-4 sm:p-5 grid gap-4' },
     h('div', {}, h('h2', { class: 'font-semibold', text: 'Hours by paper & group' }), h('p', { class: 'text-xs mut mt-0.5', text: 'Tap any slice or paper name to drill into its chapter-wise breakdown.' })),
     h('div', { class: 'donut-wrap' }, svg,
@@ -3656,11 +3817,13 @@ function subjectDonutCard(S) {
         bar(x.pct, x.s.col, x.s.name + ': ' + fmtH(x.m)))))),
     h('div', { class: 'sub grid gap-1.5' },
       h('div', { class: 'flex flex-wrap justify-between gap-2 text-xs num' },
-        h('span', {}, h('b', { style: 'color:var(--acct)', text: 'Group I: ' }), fmtH(S.grp['Group I']) + ' (' + g1p + '%)'),
-        h('span', {}, h('b', { style: 'color:#38bdf8', text: 'Group II: ' }), fmtH(S.grp['Group II']) + ' (' + g2p + '%)')),
+        h('span', {}, h('b', { style: 'color:var(--acct)', text: 'Group I: ' }), fmtH(S.grp['Group I'] || 0) + ' (' + g1p + '%)'),
+        h('span', {}, h('b', { style: 'color:#38bdf8', text: 'Group II: ' }), fmtH(S.grp['Group II'] || 0) + ' (' + g2p + '%)'),
+        S.grp.Other > 0 ? h('span', {}, h('b', { style: 'color:#2dd4bf', text: 'Other/Custom: ' }), fmtH(S.grp.Other) + ' (' + gop + '%)') : null),
       h('div', { class: 'stk-bar' },
         h('div', { class: 'stk-seg', style: 'width:' + g1p + '%;background:var(--acc)' }),
-        h('div', { class: 'stk-seg', style: 'width:' + g2p + '%;background:#38bdf8' }))));
+        h('div', { class: 'stk-seg', style: 'width:' + g2p + '%;background:#38bdf8' }),
+        gop > 0 ? h('div', { class: 'stk-seg', style: 'width:' + gop + '%;background:#2dd4bf' }) : null)));
 }
 
 // Difficulty analytics, derived from current ratings + dated rating history (fixed empty heading quirk)
@@ -3727,7 +3890,7 @@ let trophyAll = false, trophyCat = 'all';
 function computePaperMastery(S) {
   S = S || stats();
   const actCh = state.chapters.filter(c => !c.archived);
-  const rows = [...SUBJ.values()].map(s => {
+  const rows = coreSubjs().map(s => {
     const mins = S.sub.get(s.id) || 0, hrs = mins / 60;
     const chs = actCh.filter(c => c.subjectId === s.id);
     const msDone = chs.reduce((a, c) => a + c.m.filter(Boolean).length, 0);
@@ -3784,7 +3947,7 @@ function computeDailyMissions() {
   }
   // Mission 1: Paper Balance — least-studied paper in last 7 days (excluding today so goal stays stable all day)
   const w7Start = addDays(tStr, -7), yestStr = addDays(tStr, -1);
-  const sub7 = new Map([...SUBJ.keys()].map(k => [k, 0]));
+  const sub7 = new Map(coreSubjs().map(s => [s.id, 0]));
   for (const l of state.logs) if (l.date >= w7Start && l.date <= yestStr && sub7.has(l.subjectId)) sub7.set(l.subjectId, sub7.get(l.subjectId) + logMins(l));
   let weakSid = 'sub_aa', minM = Infinity;
   for (const [sid, m] of sub7) if (m < minM) { minM = m; weakSid = sid; }
@@ -3984,7 +4147,7 @@ function computeRecordsAndTrophies() {
   for (const m of sMocks) {
     const p = pctOf(m);
     if (!topMock || p > topMock.p) topMock = { p, m };
-    if (p >= 60) exPapers.add(m.subjectId);
+    if (p >= 60 && (SUBJ.get(m.subjectId) || {}).core) exPapers.add(m.subjectId);
     if (!mocksBySub.has(m.subjectId)) mocksBySub.set(m.subjectId, []);
     mocksBySub.get(m.subjectId).push(p);
   }
@@ -4003,10 +4166,11 @@ function computeRecordsAndTrophies() {
 
   // Syllabus, Boss Chapters, Fear Conquered, Revisions & Zero-Overdue
   const actCh = state.chapters.filter(c => !c.archived);
+  const coreActCh = actCh.filter(c => (SUBJ.get(c.subjectId) || {}).core);
   const chDone = actCh.filter(c => c.m.every(Boolean)).length;
-  const totMs = actCh.length * 4, doneMs = actCh.reduce((a, c) => a + c.m.filter(Boolean).length, 0);
+  const totMs = coreActCh.length * 4, doneMs = coreActCh.reduce((a, c) => a + c.m.filter(Boolean).length, 0);
   const sylPct = totMs ? Math.round(doneMs / totMs * 100) : 0;
-  const fullSubjs = [...SUBJ.values()].filter(s => { const t = subjectStat(s.id); return t.act.length > 0 && t.pct === 100; }).length;
+  const fullSubjs = coreSubjs().filter(s => { const t = subjectStat(s.id); return t.act.length > 0 && t.pct === 100; }).length;
   const bossDone = actCh.filter(c => c.m.every(Boolean) && (c.diff === 'Hard' || c.diff === 'Med-Hard')).length;
   let fearConq = 0;
   for (const c of actCh) {
@@ -4157,7 +4321,7 @@ function computeWeeklyQuests() {
   const prevWs = addDays(ws, -7), prevWe = addDays(ws, -1);
   const prevWkMins = state.logs.filter(l => l.date >= prevWs && l.date <= prevWe).reduce((a, l) => a + logMins(l), 0);
   const volGoal = cfg.weeklyTarget || Math.max(900, prevWkMins);
-  const wkSubs = new Set(wkLogs.map(l => l.subjectId)).size;
+  const wkSubs = new Set(wkLogs.filter(l => (SUBJ.get(l.subjectId) || {}).core).map(l => l.subjectId)).size;
   const wkFoc4 = wkLogs.filter(l => l.focus >= 4).length;
   const wkRevs = state.chapters.filter(c => !c.archived).reduce((a, c) => a + c.rev.filter(r => r.date >= ws && r.date <= we).length, 0);
   const wkMocks = state.mocks.filter(m => m.date >= ws && m.date <= we).length;
@@ -4494,7 +4658,7 @@ const DENSITIES = [['compact', 'Compact'], ['normal', 'Normal'], ['cozy', 'Cozy'
 const SURFACES = [['soft', 'Skin Default'], ['flat', 'Flat Minimal'], ['outlined', 'Crisp Outlined']];
 const RADII = [['sharp', 'Sharp', 6, 5, 5], ['balanced', 'Balanced', 12, 9, 8], ['rounded', 'Rounded', 16, 12, 10], ['soft', 'Extra Soft', 24, 18, 14]];
 const WIDTHS = [['centered', 'Centered', '64rem'], ['wide', 'Wide', '76rem'], ['full', 'Full Width', '92rem']];
-const DEF_SUBJ_COLS = Object.fromEntries([...SUBJ.values()].map((s, i) => [s.id, COLORS[i]]));
+const DEF_SUBJ_COLS = Object.fromEntries(BASE_SUBJ.map(b => [b.id, b.col]));
 const DEF_DIFF_COLS = { ...DCOL };
 const SEM = { dark: { bad: '#fca5a5', good: '#34d399', warn: '#fbbf24', badb: '#7f1d1d', badbg: '#3b1219', badt: '#fecaca', goodb: '#14684a', warnb: '#7a5b10', shadow: 'rgba(0,0,0,.65)' }, light: { bad: '#b91c1c', good: '#047857', warn: '#b45309', badb: '#f0a8a3', badbg: '#fdecea', badt: '#991b1b', goodb: '#86d1b3', warnb: '#e0b866', shadow: 'rgba(40,50,90,.22)' } };
 const UI_CFG_DEFAULT = () => ({
@@ -4602,7 +4766,7 @@ function applyUI() {
   doc.setAttribute('data-motion', ui.motion ? 'on' : 'off');
   rs.fontSize = ui.fs + 'px'; curPal = P; inkCache.clear();
   const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', P.bg);
-  for (const [id, s] of SUBJ.entries()) s.col = ui.scols[id] || DEF_SUBJ_COLS[id];
+  for (const [id, s] of SUBJ.entries()) if (!s.custom) s.col = ui.scols[id] || DEF_SUBJ_COLS[id] || s.col;
   for (const lv of LEVELS) DCOL[lv] = ui.dcols[lv] || DEF_DIFF_COLS[lv];
   syncNavHost();
   raf(() => raf(moveNavPill));
@@ -4955,10 +5119,23 @@ function renderSettings() {
             h('div', { class: 'flex flex-wrap gap-2' }, DENSITIES.map(([k, n]) => h('button', { type: 'button', class: 'btn s', style: pressed(ui.density === k), 'aria-pressed': String(ui.density === k), 'data-act': 'uidensity', 'data-id': k, text: n })))),
           h('div', { class: 'grid gap-1.5' }, h('h4', { class: 'text-sm font-medium', text: 'Page width' }),
             h('div', { class: 'flex flex-wrap gap-2' }, WIDTHS.map(([k, n]) => h('button', { type: 'button', class: 'btn s', style: pressed(ui.width === k), 'aria-pressed': String(ui.width === k), 'data-act': 'uiwidth', 'data-id': k, text: n }))))))),
-      mkSec('set-colors', card('Subject & difficulty colours', 'Customise the ring, progress bar, sparkline, dot, and chart colours for each ICAI paper and difficulty level.',
+      mkSec('set-colors', card('Custom subjects & colours', 'Manage custom non-ICAI subjects (e.g. Notes Research, B.Com, Amendments) and customise colours for all papers & difficulty levels.',
         h('div', { class: 'grid gap-2' },
-          h('div', { class: 'flex items-center justify-between gap-2' }, h('h4', { class: 'text-sm font-medium', text: 'Paper colours' }), btn('Reset papers', 'uiscolrst', '', '', 'Reset all paper colours to default')),
-          h('div', { class: 'grid gap-2' }, [...SUBJ.values()].map(s => pickRow(s.name, 'ui-sc-' + s.id, () => ui.scols[s.id] || DEF_SUBJ_COLS[s.id], v => { ui.scols[s.id] = v; }, true)))),
+          h('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
+            h('h4', { class: 'text-sm font-medium', text: 'Custom Subjects (' + ((state.settings.customSubjects || []).length) + '/20)' }),
+            h('button', { type: 'button', class: 'btn s p', 'data-act': 'csubadd' }, ico('plus', 13), 'Add Custom Subject')),
+          h('p', { class: 'text-xs mut', text: '“Miscellaneous / Other” is always built in. Add custom categories below — they sync via Gist and count toward hours, daily targets, streaks & backlog without affecting ICAI Pass Simulator.' }),
+          (state.settings.customSubjects || []).length ? h('div', { class: 'grid gap-2' }, (state.settings.customSubjects || []).map(cs =>
+            h('div', { class: 'sub flex flex-wrap items-center justify-between gap-2 text-xs' },
+              h('span', { class: 'flex items-center gap-2 font-medium min-w-0' },
+                h('span', { style: 'width:10px;height:10px;border-radius:99px;flex-shrink:0;background:' + cs.color }),
+                h('span', { class: 'break-words', text: cs.name })),
+              h('div', { class: 'flex gap-1.5 shrink-0' },
+                btn('Edit', 'csubedit', cs.id, '', 'Edit custom subject ' + cs.name),
+                btn('Delete', 'csubdel', cs.id, 'd', 'Delete custom subject ' + cs.name))))) : null),
+        h('div', { class: 'grid gap-2 pt-2', style: 'border-top:1px solid var(--line)' },
+          h('div', { class: 'flex items-center justify-between gap-2' }, h('h4', { class: 'text-sm font-medium', text: 'Built-in paper & Misc colours' }), btn('Reset papers', 'uiscolrst', '', '', 'Reset all paper colours to default')),
+          h('div', { class: 'grid gap-2' }, BASE_SUBJ.map(s => pickRow(s.name, 'ui-sc-' + s.id, () => ui.scols[s.id] || DEF_SUBJ_COLS[s.id], v => { ui.scols[s.id] = v; }, true)))),
         h('div', { class: 'grid gap-2 pt-2', style: 'border-top:1px solid var(--line)' },
           h('div', { class: 'flex items-center justify-between gap-2' }, h('h4', { class: 'text-sm font-medium', text: 'Difficulty colours' }), btn('Reset difficulty', 'uidcolrst', '', '', 'Reset all difficulty colours to default')),
           h('div', { class: 'grid sm:grid-cols-2 gap-2' }, LEVELS.map(lv => pickRow(lv, 'ui-dc-' + lv.replace(/\W/g, ''), () => ui.dcols[lv] || DEF_DIFF_COLS[lv], v => { ui.dcols[lv] = v; }, true)))))),
@@ -4982,7 +5159,7 @@ function renderSettings() {
     ['set-theme', 'Theme & Colours'],
     ['set-surface', 'Backdrop'],
     ['set-typo', 'Typography'],
-    ['set-colors', 'Paper Colours'],
+    ['set-colors', 'Subjects & Colours'],
     ['set-transfer', 'Export Look']
   ];
   const setNav = h('nav', { class: 'set-nav', 'aria-label': 'Settings sections' }, setNavItems.map(([sid, lbl], i) =>
@@ -5032,7 +5209,7 @@ function renderExam() {
     return;
   }
   const S = stats(), tStr = today(), td = S.date.get(tStr) || 0, tg = targetForDate(tStr), bl = computeBacklog(S);
-  let ch = 0, done = 0; for (const s of SUBJ.values()) { const t = subjectStat(s.id); ch += t.act.length; done += t.done; }
+  let ch = 0, done = 0; for (const s of coreSubjs()) { const t = subjectStat(s.id); ch += t.act.length; done += t.done; }
   const pct = ch ? Math.round(done / (ch * 4) * 100) : 0;
   const xp = computeXP();
   const chips = h('div', { class: 'flex flex-wrap items-center gap-2' },
@@ -5050,7 +5227,7 @@ function renderExam() {
 function weakCard() {
   const tn = dayNum(today()), S = stats(), mk = sortedMocks(), avgOf = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length * 10) / 10 : null;
   const hardLv = c => LEVELS.indexOf(c.diff) >= 3, openCh = c => !c.m.every(Boolean), col = v => v === null ? 'var(--mut)' : v < 40 ? 'var(--bad)' : v < 50 ? 'var(--warn)' : 'var(--good)';
-  const rows = [...SUBJ.values()].map(s => {
+  const rows = coreSubjs().map(s => {
     const p = mk.filter(m => m.subjectId === s.id).map(pctOf), st = subjectStat(s.id), avg = avgOf(p);
     const trend = p.length >= 3 ? Math.round((avgOf(p.slice(-2)) - avgOf(p.slice(0, -2))) * 10) / 10 : null; // latest 2 tests vs the earlier ones
     const hardOpen = st.act.filter(c => hardLv(c) && openCh(c)).length, due = st.act.filter(c => !openCh(c) && (c.rev.length ? tn - dayNum(c.rev[c.rev.length - 1].date) : Infinity) >= revDays()).length;
@@ -5456,7 +5633,7 @@ const sortedMocks = () => [...state.mocks].sort((a, b) => a.date.localeCompare(b
 function mockForm(init, onSave, submitText, reset) {
   const date = h('input', { type: 'date', class: 'inp', max: today(), value: init.date, 'aria-label': 'Test date' });
   const name = h('input', { class: 'inp', maxlength: MAXN, placeholder: 'e.g. ICAI MTP Series 1', 'aria-label': 'Test name', value: init.name || '' });
-  const subj = h('select', { class: 'inp', 'aria-label': 'Subject' }, h('option', { value: '', text: 'Select a subject…' }), [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name }))); subj.value = init.subjectId;
+  const subj = h('select', { class: 'inp', 'aria-label': 'Subject' }, subjOptGroups('Select a subject…')); subj.value = init.subjectId;
   const marks = h('input', { type: 'number', class: 'inp', step: '0.25', min: '0', inputmode: 'decimal', 'aria-label': 'Marks scored', value: init.marks ?? '' });
   const total = h('input', { type: 'number', class: 'inp', step: '0.25', min: '1', max: '1000', inputmode: 'decimal', 'aria-label': 'Total marks', value: init.total ?? 100 });
   const remarks = h('textarea', { class: 'inp', rows: '2', maxlength: MAXR, placeholder: 'Mistakes, weak topics (optional)', 'aria-label': 'Remarks' }); remarks.value = init.remarks || '';
@@ -5519,7 +5696,7 @@ function refreshMocks() {
   renderBackupBar();
 }
 function renderMocks() {
-  const fsel = h('select', { class: 'inp', style: 'width:auto', 'aria-label': 'Filter tests by subject', onchange: e => { mFil = e.target.value; refreshMocks(); } }, h('option', { value: '', text: 'All subjects' }), [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name }))); fsel.value = mFil;
+  const fsel = h('select', { class: 'inp', style: 'width:auto', 'aria-label': 'Filter tests by subject', onchange: e => { mFil = e.target.value; refreshMocks(); } }, subjOptGroups('All subjects')); fsel.value = mFil;
   mount(h('div', { class: 'grid gap-6' }, h('section', { class: 'card p-4 sm:p-5' }, h('h2', { class: 'font-semibold mb-3', text: 'Log a mock / test' }), mockForm({ date: today(), subjectId: '', total: 100 }, x => { const e = addMock(x); if (!e) refreshMocks(); return e; }, 'Add test', true)),
     h('section', { class: 'grid gap-3' }, h('h2', { class: 'text-sm font-semibold tracking-widest mut', text: 'SCORE TRENDS' }), h('div', { id: 'msum', class: 'grid gap-3 md:grid-cols-2' })),
     h('section', { class: 'grid gap-3' }, h('div', { class: 'flex flex-wrap items-center justify-between gap-2' }, h('h2', { class: 'text-sm font-semibold tracking-widest mut', text: 'HISTORY' }), fsel), h('div', { id: 'mhist', class: 'grid gap-3 md:grid-cols-2' }))));
@@ -5559,7 +5736,7 @@ function timeMap(S) {
   const none = R.preset === 'all' ? 'not started' : 'none in this range', blk = (f, col) => h('span', { style: 'display:inline-block;width:12px;height:12px;border-radius:3px;background:' + col + ';opacity:' + (0.35 + 0.65 * f).toFixed(2) });
   const unitFor = mx => [1, 2, 5, 10, 20, 50, 100].find(u => mx / 60 / u <= 40) || 100;
   const blocks = (min, u, col) => { const n = min / 60 / u, full = Math.floor(n), part = n - full, el = h('div', { class: 'flex flex-wrap gap-1', 'aria-hidden': 'true' }); for (let i = 0; i < full; i++) el.append(blk(1, col)); if (part >= 0.1 || (min > 0 && !full)) el.append(blk(part || 0.1, col)); return el; };
-  const subs = R.sub ? [SUBJ.get(R.sub)].filter(Boolean) : [...SUBJ.values()], mxS = Math.max(0, ...subs.map(s => S.sub.get(s.id) || 0)), uS = unitFor(mxS);
+  const subs = R.sub ? [SUBJ.get(R.sub)].filter(Boolean) : [...SUBJ.values()].filter(s => s.core || (S.sub.get(s.id) || 0) > 0 || state.chapters.some(c => c.subjectId === s.id)), mxS = Math.max(0, ...subs.map(s => S.sub.get(s.id) || 0)), uS = unitFor(mxS);
   let top = null;
   const chInScope = c => (!R.grp || grpMatch(c.groupId || null)) && (!R.ch || (R.ch !== '__gen' && c.id === R.ch));
   const det = subs.map(s => {
@@ -5629,7 +5806,7 @@ const logFilt = l => (!R.sub || l.subjectId === R.sub) && (!R.ch || (R.ch === '_
 function drill(sid, chid, grp = '') { R.sub = sid; R.ch = chid; R.grp = grp; renderAnalytics(); try { window.scrollTo(0, 0); } catch (_) {} }
 function selBar() {
   const gt = R.sub ? gOrder(R.sub) : [], gs = gt.map(x => x.g);
-  const ssel = h('select', { class: 'inp', style: 'width:auto;max-width:100%', 'aria-label': 'Subject focus', onchange: e => drill(e.target.value, '') }, h('option', { value: '', text: 'All subjects' }), [...SUBJ.values()].map(s => h('option', { value: s.id, text: s.name }))); ssel.value = R.sub;
+  const ssel = h('select', { class: 'inp', style: 'width:auto;max-width:100%', 'aria-label': 'Subject focus', onchange: e => drill(e.target.value, '') }, subjOptGroups('All subjects')); ssel.value = R.sub;
   const gsel = gs.length ? h('select', { class: 'inp', style: 'width:auto;max-width:100%', 'aria-label': 'Group focus', onchange: e => drill(R.sub, '', e.target.value) }, h('option', { value: '', text: 'All groups' }), gt.map(({ g, depth }) => h('option', { value: g.id, text: '\u00a0\u00a0'.repeat(depth) + g.name })), h('option', { value: '__none', text: 'Not in a group' })) : null; if (gsel) gsel.value = R.grp;
   const inGrp = c => !R.grp || grpMatch(c.groupId || null);
   const csel = R.sub ? h('select', { class: 'inp', style: 'width:auto;max-width:100%', 'aria-label': 'Chapter focus', onchange: e => drill(R.sub, e.target.value, R.grp) }, h('option', { value: '', text: 'All chapters' }), h('option', { value: '__gen', text: 'General Study' }), state.chapters.filter(c => c.subjectId === R.sub && inGrp(c)).map(c => h('option', { value: c.id, text: c.name + (c.archived ? ' (archived)' : '') }))) : null;
@@ -5675,11 +5852,11 @@ function drillCard(S, rg) {
 }
 
 /* ===== Sub-groups inside a subject (e.g. FM and SM inside paper 6) ===== */
-function groupErr(g) {
+function groupErr(g, sids = SUBJ) {
   if (!g || typeof g !== 'object') return 'not an object.';
   if (typeof g.id !== 'string' || !g.id || g.id.length > 80) return 'invalid ID.';
   if (typeof g.name !== 'string' || !clean(g.name) || g.name.length > MAXN) return 'invalid name.';
-  if (!SUBJ.has(g.subjectId)) return 'unknown subject.';
+  if (!sids.has(g.subjectId)) return 'unknown subject.';
   if (g.parentId !== undefined && g.parentId !== null && (typeof g.parentId !== 'string' || !g.parentId || g.parentId.length > 80 || g.parentId === g.id)) return 'invalid parent group.';
   if (g.color !== undefined && g.color !== null && !(typeof g.color === 'string' && /^#[0-9a-f]{6}$/.test(g.color))) return 'invalid colour.';
   if (g.icon !== undefined && g.icon !== null && !GICONS.includes(g.icon)) return 'invalid icon.';
@@ -5831,11 +6008,11 @@ function moveChaptersModal(sid) { // bulk transfer: tick chapters, pick the dest
 /* ===== Chapter delete, archived view, erase-all, helpers ===== */
 
 const refocus = sel => { const el = document.querySelector(sel); if (el) el.focus({ preventScroll: true }); }; // keep keyboard focus after a re-render
-function chapErr(c) { // same rules as live chapters; used for recycle-bin chapter items
+function chapErr(c, sids = SUBJ) { // same rules as live chapters; used for recycle-bin chapter items
   if (!c || typeof c !== 'object') return 'not an object.';
   if (typeof c.id !== 'string' || !c.id || c.id.length > 80) return 'invalid ID.';
   if (typeof c.name !== 'string' || !clean(c.name) || c.name.length > MAXN) return 'invalid name.';
-  if (!SUBJ.has(c.subjectId)) return 'unknown subject.';
+  if (!sids.has(c.subjectId)) return 'unknown subject.';
   if (!Array.isArray(c.m) || c.m.length !== 4 || c.m.some(x => typeof x !== 'boolean')) return 'milestones must be exactly four true/false values.';
   if (typeof c.archived !== 'boolean') return 'invalid archived flag.';
   if (c.groupId !== null && typeof c.groupId !== 'string') return 'invalid group reference.';
@@ -5903,10 +6080,29 @@ function afterMove(id, a) { renderSyllabus(); for (const x of [a, a === 'chup' ?
 /* ===== Merge a backup into current data (additive, validated, undoable) ===== */
 function mergeBackup(cur, inc) { // returns { d, rep } or { err }. Never deletes or overwrites; the result must pass validate() or nothing happens.
   const d = JSON.parse(JSON.stringify(cur)), rep = { chAdded: 0, chMatched: 0, logAdded: 0, logSkipped: 0, mkAdded: 0, mkSkipped: 0, grAdded: 0, grMatched: 0, target: false, any: false };
+  // Merge customSubjects first so incoming groups/chapters/logs/mocks resolve cleanly
+  const sMap = new Map();
+  if (Array.isArray(inc.settings.customSubjects) && inc.settings.customSubjects.length) {
+    ensureCustomSubjList(d.settings);
+    const curSids = validSubjSet(d), curNames = new Map([...BASE_SUBJ.map(b => [norm(b.name), b.id]), ...d.settings.customSubjects.map(c => [norm(c.name), c.id])]);
+    for (const cs0 of inc.settings.customSubjects) {
+      if (curSids.has(cs0.id)) { sMap.set(cs0.id, cs0.id); continue; }
+      const byNm = curNames.get(norm(cs0.name));
+      if (byNm) { sMap.set(cs0.id, byNm); continue; }
+      if (d.settings.customSubjects.length < 20) {
+        d.settings.customSubjects.push({ id: cs0.id, name: cs0.name, color: cs0.color || '#fb923c' });
+        curSids.add(cs0.id); curNames.set(norm(cs0.name), cs0.id); sMap.set(cs0.id, cs0.id); rep.any = true;
+      } else {
+        sMap.set(cs0.id, 'sub_misc');
+      }
+    }
+  }
+  const mergedSids = validSubjSet(d);
+  const mapSid = sid => { if (sid == null) return null; const m = sMap.get(sid) || sid; return mergedSids.has(m) ? m : 'sub_misc'; };
   const gById = new Map(d.groups.map(g => [g.id, g])), gKey = g => g.subjectId + '|' + (g.parentId || '') + '|' + norm(g.name), gByName = new Map(d.groups.map(g => [gKey(g), g])), usedG = new Set([...d.groups.map(g => g.id), ...d.trash.filter(x => x.kind === 'group').map(x => x.item.id)]), gIn = new Map(), incG = new Map(inc.groups.map(g => [g.id, g])), visiting = new Set();
   const gResolve = id0 => { // incoming group id -> id in the merged data (parents first, so nesting is kept)
     if (gIn.has(id0)) return gIn.get(id0); const g0 = incG.get(id0); if (!g0 || visiting.has(id0)) return null; visiting.add(id0);
-    const g = JSON.parse(JSON.stringify(g0)), par = g.parentId ? gResolve(g.parentId) : null; visiting.delete(id0);
+    const g = JSON.parse(JSON.stringify(g0)); g.subjectId = mapSid(g.subjectId); const par = g.parentId ? gResolve(g.parentId) : null; visiting.delete(id0);
     const pg = par && gById.get(par); g.parentId = pg && pg.subjectId === g.subjectId ? par : null;
     const idHit = gById.get(g.id), hit = (idHit && idHit.subjectId === g.subjectId) ? idHit : gByName.get(gKey(g));
     if (hit) { gIn.set(g0.id, hit.id); rep.grMatched++; } else { if (usedG.has(g.id)) g.id = uid('gr'); usedG.add(g.id); delete g.order; d.groups.push(g); gById.set(g.id, g); gByName.set(gKey(g), g); gIn.set(g0.id, g.id); rep.grAdded++; rep.any = true; }
@@ -5916,7 +6112,7 @@ function mergeBackup(cur, inc) { // returns { d, rep } or { err }. Never deletes
   const byId = new Map(d.chapters.map(c => [c.id, c])), byName = new Map(d.chapters.map(c => [c.subjectId + '|' + norm(c.name), c])), trashCh = new Set(d.trash.filter(x => x.kind === 'chapter').map(x => x.item.id)), usedIds = new Set([...d.chapters.map(c => c.id), ...d.trash.map(x => x.item.id)]), map = new Map();
   for (const c0 of inc.chapters) {
     if (trashCh.has(c0.id)) continue; // chapters you deleted here (in your bin) are not resurrected on merge
-    const c = JSON.parse(JSON.stringify(c0)), key = c.subjectId + '|' + norm(c.name), idHit = byId.get(c.id), hit = (idHit && idHit.subjectId === c.subjectId) ? idHit : byName.get(key);
+    const c = JSON.parse(JSON.stringify(c0)); c.subjectId = mapSid(c.subjectId); const key = c.subjectId + '|' + norm(c.name), idHit = byId.get(c.id), hit = (idHit && idHit.subjectId === c.subjectId) ? idHit : byName.get(key);
     if (hit) { // same chapter on both sides: combine progress and history, keep your own name / archived state
       let ch = false;
       c.m.forEach((v, i) => { if (v && !hit.m[i]) { hit.m[i] = true; ch = true; } });
@@ -5933,13 +6129,13 @@ function mergeBackup(cur, inc) { // returns { d, rep } or { err }. Never deletes
   const logIds = new Set(d.logs.map(l => l.id)), trashLogs = new Set(d.trash.filter(x => x.kind === 'log').map(x => x.item.id));
   for (const l0 of inc.logs) { // sessions you deleted here (in your bin) are not brought back
     if (logIds.has(l0.id) || trashLogs.has(l0.id)) { rep.logSkipped++; continue; }
-    const l = JSON.parse(JSON.stringify(l0)); if (l.chapterId) l.chapterId = map.get(l.chapterId) || null;
+    const l = JSON.parse(JSON.stringify(l0)); l.subjectId = mapSid(l.subjectId); if (l.chapterId) l.chapterId = map.get(l.chapterId) || null;
     d.logs.push(l); logIds.add(l.id); rep.logAdded++; rep.any = true;
   }
   const sig = m => [m.date, norm(m.name), m.subjectId, m.marks, m.total].join('|'), mkIds = new Set(d.mocks.map(m => m.id)), sigs = new Set(d.mocks.map(sig)), trashMk = new Set(d.trash.filter(x => x.kind === 'mock').map(x => x.item.id));
   for (const m0 of inc.mocks) {
     if (mkIds.has(m0.id) || trashMk.has(m0.id) || sigs.has(sig(m0))) { rep.mkSkipped++; continue; }
-    d.mocks.push(JSON.parse(JSON.stringify(m0))); mkIds.add(m0.id); sigs.add(sig(m0)); rep.mkAdded++; rep.any = true;
+    const mCopy = JSON.parse(JSON.stringify(m0)); mCopy.subjectId = mapSid(mCopy.subjectId); d.mocks.push(mCopy); mkIds.add(mCopy.id); sigs.add(sig(mCopy)); rep.mkAdded++; rep.any = true;
   }
   if (d.settings.dailyTarget === null && inc.settings.dailyTarget !== null) { d.settings.dailyTarget = inc.settings.dailyTarget; rep.target = true; rep.any = true; }
   if (!d.settings.examDate && inc.settings.examDate) { d.settings.examDate = inc.settings.examDate; rep.any = true; }
@@ -5993,7 +6189,7 @@ function mergeBackup(cur, inc) { // returns { d, rep } or { err }. Never deletes
         if (t0.done && !hit.done) { hit.done = true; hit.doneAt = t0.doneAt || nowISO(); rep.any = true; }
         if ((t0.rolls || 0) > (hit.rolls || 0)) { hit.rolls = t0.rolls; hit.date = t0.date; rep.any = true; }
       } else if (d.settings.todos.length < 5000) {
-        const copy = JSON.parse(JSON.stringify(t0));
+        const copy = JSON.parse(JSON.stringify(t0)); copy.subjectId = mapSid(copy.subjectId);
         d.settings.todos.push(copy); tdMap.set(copy.id, copy); rep.any = true;
       }
     }
@@ -6003,7 +6199,7 @@ function mergeBackup(cur, inc) { // returns { d, rep } or { err }. Never deletes
     const tpIds = new Set(d.settings.ttTemplates.map(x => x.id)), tpNames = new Set(d.settings.ttTemplates.map(x => norm(x.name)));
     for (const tp0 of inc.settings.ttTemplates) {
       if (!tpIds.has(tp0.id) && !tpNames.has(norm(tp0.name)) && d.settings.ttTemplates.length < 20) {
-        d.settings.ttTemplates.push(JSON.parse(JSON.stringify(tp0))); tpIds.add(tp0.id); tpNames.add(norm(tp0.name)); rep.any = true;
+        const tpCopy = JSON.parse(JSON.stringify(tp0)); tpCopy.blocks = (tpCopy.blocks || []).map(b => ({ ...b, subjectId: mapSid(b.subjectId) })); d.settings.ttTemplates.push(tpCopy); tpIds.add(tp0.id); tpNames.add(norm(tp0.name)); rep.any = true;
       }
     }
   }
@@ -6012,13 +6208,13 @@ function mergeBackup(cur, inc) { // returns { d, rep } or { err }. Never deletes
     for (const [ds, arr] of Object.entries(inc.settings.ttDays)) {
       if (!isDate(ds) || !Array.isArray(arr) || !arr.length) continue;
       if (!d.settings.ttDays[ds]) {
-        if (Object.keys(d.settings.ttDays).length < 500) { d.settings.ttDays[ds] = JSON.parse(JSON.stringify(arr)).slice(0, 30); rep.any = true; }
+        if (Object.keys(d.settings.ttDays).length < 500) { d.settings.ttDays[ds] = JSON.parse(JSON.stringify(arr)).slice(0, 30).map(b => ({ ...b, subjectId: mapSid(b.subjectId) })); rep.any = true; }
       } else {
         const bm = new Map(d.settings.ttDays[ds].map(b => [b.id, b]));
         for (const b0 of arr) {
           const bh = bm.get(b0.id);
           if (bh) { if (b0.done && !bh.done) { bh.done = true; rep.any = true; } }
-          else if (d.settings.ttDays[ds].length < 30) { const cp = JSON.parse(JSON.stringify(b0)); d.settings.ttDays[ds].push(cp); bm.set(cp.id, cp); rep.any = true; }
+          else if (d.settings.ttDays[ds].length < 30) { const cp = JSON.parse(JSON.stringify(b0)); cp.subjectId = mapSid(cp.subjectId); d.settings.ttDays[ds].push(cp); bm.set(cp.id, cp); rep.any = true; }
         }
       }
     }
@@ -6194,6 +6390,9 @@ const actions = {
   gadd: id => groupAddModal(id),
   gmenu: id => groupMenuModal(id),
   subjmenu: id => subjectMenuModal(id),
+  csubadd: () => customSubjectModal(null),
+  csubedit: id => customSubjectModal(id),
+  csubdel: id => delCustomSubjectModal(id),
   dhdel: s => { const [cid, dt, single] = String(s).split('|'); if (!fail(deleteDifficulty(cid, dt))) { render(); diffModal(single === '1' ? cid : ''); toast('Deleted difficulty entry from ' + fmtDate(dt).replace(/^\w+, /, '') + '.', null); } },
   revtoday: id => { if (!fail(markRevised(id, today()))) render(); }, revdate: id => revDateModal(id), revhist: id => revHistModal(id), revall: () => { revAll = !revAll; renderRevision(); },
   asec: v => { aSec = v; renderAnalytics(); refocus('[data-act=asec][data-id="' + v + '"]'); },
@@ -6324,12 +6523,13 @@ const actions = {
 };
 function initializeApp() {
   loadData();
+  loadSticky(); loadTimer();
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {} // ask the browser not to evict this data
   window.addEventListener('storage', e => { // another tab of this app saved: pick up its data so this tab never overwrites it with stale state
     if (e.key === TM_KEY && e.newValue !== null) { loadTimer(); tmEnsureLoop(); renderExam(); if (tab === 'log') renderTimerBox(); return; }
     if (e.key === UI_KEY && e.newValue !== null) { loadUI(); applyUI(); if (tab === 'settings') renderSettings(); else render(); return; }
     if (e.key !== KEY || e.newValue === null || locked()) return; const p = parseBackup(e.newValue);
-    if (p.d) { state = p.d; updateBin(); render(); toast('Updated from another tab.', null); } else warn('Another tab saved data this tab could not read. Reload this page before editing.');
+    if (p.d) { state = p.d; syncSubjects(state.settings); updateBin(); render(); toast('Updated from another tab.', null); } else warn('Another tab saved data this tab could not read. Reload this page before editing.');
   });
   document.addEventListener('click', e => { const t = e.target.closest('[data-act]'); if (t && t.type !== 'checkbox' && actions[t.dataset.act]) actions[t.dataset.act](t.dataset.id); });
   document.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.act === 'chgroup') { fail(setChapterGroup([t.dataset.id], t.value || null)); renderSyllabus(); refocus('select[data-act=chgroup][data-id="' + t.dataset.id + '"]'); return; }
